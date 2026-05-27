@@ -255,7 +255,7 @@ export default function Home() {
           {/* ─── Quick Actions ─────────────────────────────────── */}
           <motion.div
             id="quick-actions"
-            className="grid grid-cols-2 gap-3.5"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"
             variants={fadeUp}
           >
             <button

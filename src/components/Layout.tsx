@@ -87,7 +87,7 @@ export default function Layout() {
       <WebPairModal isOpen={pairModalOpen} onClose={() => setPairModalOpen(false)} />
 
       {/* ─── Main Content ────────────────────────────────────── */}
-      <main className="flex-1 w-full max-w-5xl mx-auto overflow-y-auto px-4 py-4 pb-28 sm:px-6 lg:px-8 z-10 relative">
+      <main className="flex-1 w-full max-w-5xl mx-auto overflow-y-auto px-4 pt-6 pb-36 sm:px-6 lg:px-8 z-10 relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
