@@ -411,5 +411,23 @@ export function setupSocketServer(io: Server): void {
     })
   })
 
+  // Periodically broadcast device:found to keep device presence alive in rooms (prevent pruning)
+  const roomKeepAliveInterval = setInterval(() => {
+    try {
+      for (const [roomName, devicesMap] of roomDevices.entries()) {
+        for (const device of devicesMap.values()) {
+          io.to(roomName).emit('device:found', device)
+        }
+      }
+    } catch (err) {
+      console.error('[socket] Error in room keep-alive interval:', err)
+    }
+  }, 10000)
+
+  // Clean up interval if process terminates
+  const cleanupInterval = () => clearInterval(roomKeepAliveInterval)
+  process.on('SIGINT', cleanupInterval)
+  process.on('SIGTERM', cleanupInterval)
+
   console.log('[socket] Room-aware Socket.IO server initialized')
 }

@@ -4,6 +4,7 @@ import { getSharedSocket } from './useSocket';
 import { uploadFileStream } from '../engine/streamUploadEngine';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 // Global map to hold AbortControllers for active transfers (avoids React re-renders)
 const abortControllers = new Map<string, AbortController>();
@@ -240,8 +241,22 @@ export async function triggerFileDownload(fileName: string, transferId: string):
         recursive: true
       });
       
-      alert(`File downloaded successfully!\nSaved to Documents: ${fileName}`);
       console.log('[useTransfer] File successfully saved natively:', result.uri);
+
+      // Open native share sheet so user can choose to Save to Files, save to Downloads, or share to other apps
+      try {
+        const uriResult = await Filesystem.getUri({
+          path: fileName,
+          directory: Directory.Documents
+        });
+        await Share.share({
+          title: fileName,
+          files: [uriResult.uri]
+        });
+      } catch (shareErr: any) {
+        console.error('[useTransfer] Failed to open native share sheet:', shareErr);
+        alert(`File saved to app documents, but share sheet failed: ${shareErr.message || shareErr}`);
+      }
     } catch (err: any) {
       console.error('[useTransfer] Native download failed:', err);
       alert(`Error saving file natively: ${err.message || err}`);
