@@ -105,7 +105,7 @@ export default function Home() {
       {/* ─── Stats Row ─────────────────────────────────────── */}
       <motion.div
         id="stats-row"
-        className="grid grid-cols-3 gap-3.5"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-3.5"
         variants={fadeUp}
       >
         <div className="card flex flex-col items-center gap-1.5 py-4.5 border border-white/5 bg-white/[0.02]">
@@ -247,7 +247,7 @@ export default function Home() {
       {/* ─── Quick Actions ─────────────────────────────────── */}
       <motion.div
         id="quick-actions"
-        className="grid grid-cols-2 gap-3.5"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"
         variants={fadeUp}
       >
         <button
