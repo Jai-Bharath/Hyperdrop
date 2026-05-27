@@ -505,6 +505,11 @@ export function setupHttpServer(app: Express, io: Server): void {
     }
   })
 
+  // ── GET /healthz — health check for Render ──────────────────────
+  app.get('/healthz', (_req: Request, res: Response) => {
+    res.json({ status: 'healthy' })
+  })
+
   // ── GET /browse — HTML listing of all files ─────────────────────
   app.get('/browse', (_req: Request, res: Response) => {
     try {
