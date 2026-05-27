@@ -6,6 +6,9 @@ import { uploadFileStream } from '../engine/streamUploadEngine';
 // Global map to hold AbortControllers for active transfers (avoids React re-renders)
 const abortControllers = new Map<string, AbortController>();
 
+// Global map to hold Files for transfers prior to receiver acceptance
+const pendingUploadFiles = new Map<string, File>();
+
 // Helper to generate UUIDs in both secure and insecure contexts (HTTP LAN fallback)
 function generateUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -16,6 +19,69 @@ function generateUUID(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+export function cancelPendingUpload(id: string) {
+  pendingUploadFiles.delete(id);
+  const controller = abortControllers.get(id);
+  if (controller) {
+    controller.abort();
+    abortControllers.delete(id);
+  }
+}
+
+/**
+ * Run by the sender once the receiver accepts the transfer.
+ * Triggers the actual high-speed upload stream.
+ */
+export async function handleAcceptedTransfer(id: string, socket: any) {
+  const file = pendingUploadFiles.get(id);
+  if (!file) {
+    console.warn(`[useTransfer] No pending file found for accepted transfer: ${id}`);
+    return;
+  }
+
+  const apiBaseUrl = useStore.getState().apiBaseUrl || 'http://127.0.0.1:3001';
+  const controller = new AbortController();
+  abortControllers.set(id, controller);
+
+  useStore.getState().updateTransfer(id, { status: 'transferring' });
+
+  try {
+    await uploadFileStream(
+      file,
+      apiBaseUrl,
+      id,
+      (transferred, speed) => {
+        useStore.getState().updateTransfer(id, { transferred, speed, status: 'transferring' });
+        if (socket) {
+          socket.emit('transfer:progress', { id, transferred, speed });
+        }
+      },
+      () => {
+        // Success — clean up abort controller & file
+        useStore.getState().updateTransfer(id, { status: 'done', transferred: file.size });
+        if (socket) {
+          socket.emit('transfer:done', { id });
+        }
+        abortControllers.delete(id);
+        pendingUploadFiles.delete(id);
+      },
+      (error) => {
+        useStore.getState().updateTransfer(id, { status: 'error', error: error.message });
+        if (socket) {
+          socket.emit('transfer:error', { id, error: error.message });
+        }
+        abortControllers.delete(id);
+        pendingUploadFiles.delete(id);
+      },
+      controller.signal
+    );
+  } catch (err) {
+    console.error('[useTransfer] Transfer run error:', err);
+    abortControllers.delete(id);
+    pendingUploadFiles.delete(id);
+  }
 }
 
 /**
@@ -58,6 +124,9 @@ export function useTransfer() {
         chunks: { total: 0, done: 0, failed: [] },
       });
 
+      // Save file for later when receiver accepts
+      pendingUploadFiles.set(id, file);
+
       const socket = getSharedSocket();
       if (socket) {
         socket.emit('transfer:start', {
@@ -69,49 +138,8 @@ export function useTransfer() {
           protocol,
         });
       }
-
-      const controller = new AbortController();
-      abortControllers.set(id, controller);
-
-      updateTransfer(id, { status: 'transferring' });
-
-      try {
-        // Trigger our ultra high-speed raw streaming upload to the Express server
-        // This handles both local loopbacks (sender=receiver=laptop)
-        // and remote uploads (sender=phone, receiver=laptop)
-        await uploadFileStream(
-          file,
-          apiBaseUrl,
-          id,
-          (transferred, speed) => {
-            updateTransfer(id, { transferred, speed, status: 'transferring' });
-            if (socket) {
-              socket.emit('transfer:progress', { id, transferred, speed });
-            }
-          },
-          () => {
-            // Success — clean up abort controller
-            updateTransfer(id, { status: 'done', transferred: file.size });
-            if (socket) {
-              socket.emit('transfer:done', { id });
-            }
-            abortControllers.delete(id);
-          },
-          (error) => {
-            updateTransfer(id, { status: 'error', error: error.message });
-            if (socket) {
-              socket.emit('transfer:error', { id, error: error.message });
-            }
-            abortControllers.delete(id);
-          },
-          controller.signal
-        );
-      } catch (err) {
-        console.error('[useTransfer] Transfer run error:', err);
-        abortControllers.delete(id);
-      }
     },
-    [addTransfer, updateTransfer, apiBaseUrl],
+    [addTransfer, updateTransfer],
   );
 
   const acceptTransfer = useCallback(
@@ -121,23 +149,21 @@ export function useTransfer() {
 
       updateTransfer(id, { status: 'transferring', startedAt: Date.now() });
 
-      // Resolve destination download URL with transferId for progress tracking
-      const downloadUrl = `${apiBaseUrl}/download/${encodeURIComponent(transfer.fileName)}?transferId=${id}`;
-
-      console.log('[useTransfer] Launching direct stream download for', transfer.fileName);
-      
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = transfer.fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const socket = getSharedSocket();
+      if (socket) {
+        console.log('[useTransfer] Accepting transfer, informing sender:', id);
+        socket.emit('transfer:accept', { id });
+      } else {
+        console.error('[useTransfer] Socket not connected, cannot accept transfer');
+        updateTransfer(id, { status: 'error', error: 'Socket disconnected' });
+      }
     },
-    [transfers, updateTransfer, apiBaseUrl]
+    [transfers, updateTransfer]
   );
 
   const rejectTransfer = useCallback(
     (id: string) => {
+      cancelPendingUpload(id);
       updateTransfer(id, { status: 'cancelled' });
       const socket = getSharedSocket();
       if (socket) {
@@ -149,12 +175,7 @@ export function useTransfer() {
 
   const cancelTransfer = useCallback(
     (id: string) => {
-      const controller = abortControllers.get(id);
-      if (controller) {
-        controller.abort();
-        abortControllers.delete(id);
-      }
-
+      cancelPendingUpload(id);
       updateTransfer(id, { status: 'cancelled' });
 
       const socket = getSharedSocket();

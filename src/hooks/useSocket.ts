@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useStore, type Device } from '../store/useStore';
+import { handleAcceptedTransfer } from './useTransfer';
 
 /** Shared socket instance for other hooks/components */
 let sharedSocket: Socket | null = null;
@@ -235,6 +236,14 @@ export function useSocket(): Socket | null {
       }
     });
 
+    socket.on('transfer:accept', (payload: { id: string }) => {
+      try {
+        handleAcceptedTransfer(payload.id, socket);
+      } catch (err) {
+        console.error('[useSocket] Failed to handle accepted transfer:', err);
+      }
+    });
+
     socket.on('transfer:progress', (payload: {
       id: string;
       transferred: number;
@@ -253,12 +262,25 @@ export function useSocket(): Socket | null {
 
     socket.on('transfer:done', (payload: { id: string }) => {
       try {
-        updateTransfer(payload.id, { status: 'done' });
-        
-        // Auto-append transfer history entry on completion
         const transfers = useStore.getState().transfers;
         const transfer = transfers.find((t) => t.id === payload.id);
+        
         if (transfer) {
+          // If we are the receiver and we accepted the transfer (status is transferring),
+          // trigger the browser download now that the file is fully ready on the server.
+          if (transfer.direction === 'receive' && transfer.status === 'transferring') {
+            const apiBaseUrl = useStore.getState().apiBaseUrl || 'http://127.0.0.1:3001';
+            const downloadUrl = `${apiBaseUrl}/download/${encodeURIComponent(transfer.fileName)}?transferId=${payload.id}`;
+            console.log('[useSocket] File is ready on server. Triggering download:', downloadUrl);
+            
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = transfer.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+
           const duration = Math.max(1, (Date.now() - transfer.startedAt) / 1000);
           useStore.getState().addHistoryEntry({
             id: transfer.id,
@@ -272,6 +294,8 @@ export function useSocket(): Socket | null {
             deviceName: transfer.direction === 'send' ? 'Receiver' : 'Sender',
           });
         }
+
+        updateTransfer(payload.id, { status: 'done' });
       } catch (err) {
         console.error('[useSocket] Error auto-recording history on transfer completion:', err);
       }

@@ -32,6 +32,9 @@ const deviceRooms = new Map<string, Set<string>>()
 // Maps transferId → { senderSocketId, receiverSocketId } for auto-routing relays
 const activeTransfers = new Map<string, { senderSocketId: string; receiverSocketId: string }>()
 
+// Maps deviceId → Timeout for disconnect grace period
+const disconnectTimeouts = new Map<string, NodeJS.Timeout>()
+
 // ─── IP Helper Functions ──────────────────────────────────────────────
 /**
  * Resolves the client's public IP address, handling proxy headers on Cloud deployments.
@@ -107,6 +110,28 @@ export function setupSocketServer(io: Server): void {
     socket.on('device:register', (data: any) => {
       const deviceId = typeof data === 'object' && data ? data.deviceId : data
       if (!deviceId) return
+
+      // Clear any pending disconnect timeout for this device (reconnection within grace period)
+      const pendingTimeout = disconnectTimeouts.get(deviceId)
+      if (pendingTimeout) {
+        clearTimeout(pendingTimeout)
+        disconnectTimeouts.delete(deviceId)
+        console.log(`[socket] Device reconnected within grace period: ${deviceId}`)
+      }
+
+      const oldSocketId = deviceSockets.get(deviceId)
+      if (oldSocketId && oldSocketId !== socket.id) {
+        for (const [id, mapping] of activeTransfers.entries()) {
+          if (mapping.senderSocketId === oldSocketId) {
+            mapping.senderSocketId = socket.id
+            console.log(`[socket] Updated active transfer ${id} sender socket to new ID: ${socket.id}`)
+          }
+          if (mapping.receiverSocketId === oldSocketId) {
+            mapping.receiverSocketId = socket.id
+            console.log(`[socket] Updated active transfer ${id} receiver socket to new ID: ${socket.id}`)
+          }
+        }
+      }
 
       deviceSockets.set(deviceId, socket.id)
       socketDevices.set(socket.id, deviceId)
@@ -275,6 +300,17 @@ export function setupSocketServer(io: Server): void {
       },
     )
 
+    socket.on('transfer:accept', (data: { id: string }) => {
+      const mapping = activeTransfers.get(data.id)
+      if (mapping) {
+        const targetSocketId = socket.id === mapping.senderSocketId
+          ? mapping.receiverSocketId
+          : mapping.senderSocketId
+        io.to(targetSocketId).emit('transfer:accept', data)
+        console.log(`[transfer] Accepted: ${data.id} (Relayed to ${targetSocketId})`)
+      }
+    })
+
     socket.on('transfer:progress', (data: { id: string; transferred: number; speed: number }) => {
       const mapping = activeTransfers.get(data.id)
       if (mapping) {
@@ -324,38 +360,51 @@ export function setupSocketServer(io: Server): void {
     socket.on('disconnect', (reason: string) => {
       const deviceId = socketDevices.get(socket.id)
       if (deviceId) {
-        deviceSockets.delete(deviceId)
-        socketDevicesMap.delete(deviceId)
-        socketDevices.delete(socket.id)
-        console.log(`[socket] Device disconnected: ${deviceId} (${reason})`)
+        console.log(`[socket] Device disconnected (grace period started): ${deviceId} (${reason})`)
 
-        const rooms = deviceRooms.get(deviceId)
-        if (rooms) {
-          for (const roomName of rooms) {
-            const roomMap = roomDevices.get(roomName)
-            if (roomMap) {
-              roomMap.delete(deviceId)
-              if (roomMap.size === 0) {
-                roomDevices.delete(roomName)
+        // Clear any existing timeout for this device just in case
+        const existingTimeout = disconnectTimeouts.get(deviceId)
+        if (existingTimeout) {
+          clearTimeout(existingTimeout)
+        }
+
+        const timeout = setTimeout(() => {
+          disconnectTimeouts.delete(deviceId)
+          deviceSockets.delete(deviceId)
+          socketDevicesMap.delete(deviceId)
+          socketDevices.delete(socket.id)
+          console.log(`[socket] Grace period expired. Cleaned up device: ${deviceId}`)
+
+          const rooms = deviceRooms.get(deviceId)
+          if (rooms) {
+            for (const roomName of rooms) {
+              const roomMap = roomDevices.get(roomName)
+              if (roomMap) {
+                roomMap.delete(deviceId)
+                if (roomMap.size === 0) {
+                  roomDevices.delete(roomName)
+                }
               }
+              // Notify only other devices in that room
+              io.to(roomName).emit('device:lost', { id: deviceId })
             }
-            // Notify only other devices in that room
-            io.to(roomName).emit('device:lost', { id: deviceId })
+            deviceRooms.delete(deviceId)
           }
-          deviceRooms.delete(deviceId)
-        }
 
-        // Clean up any active transfers for this socket
-        for (const [id, mapping] of activeTransfers.entries()) {
-          if (mapping.senderSocketId === socket.id || mapping.receiverSocketId === socket.id) {
-            const otherSocketId = mapping.senderSocketId === socket.id
-              ? mapping.receiverSocketId
-              : mapping.senderSocketId
-            io.to(otherSocketId).emit('transfer:error', { id, error: 'Peer disconnected' })
-            activeTransfers.delete(id)
-            closeFileHandle(id).catch(() => {})
+          // Clean up any active transfers for this socket
+          for (const [id, mapping] of activeTransfers.entries()) {
+            if (mapping.senderSocketId === socket.id || mapping.receiverSocketId === socket.id) {
+              const otherSocketId = mapping.senderSocketId === socket.id
+                ? mapping.receiverSocketId
+                : mapping.senderSocketId
+              io.to(otherSocketId).emit('transfer:error', { id, error: 'Peer disconnected' })
+              activeTransfers.delete(id)
+              closeFileHandle(id).catch(() => {})
+            }
           }
-        }
+        }, 10000) // 10 seconds grace period
+
+        disconnectTimeouts.set(deviceId, timeout)
       } else {
         console.log(`[socket] Disconnected: ${socket.id} (${reason})`)
       }
