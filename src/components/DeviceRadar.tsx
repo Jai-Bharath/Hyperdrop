@@ -56,7 +56,7 @@ export default function DeviceRadar({
   const hasDevices = devices.length > 0;
 
   return (
-    <section id="device-radar" className="relative mx-auto w-full max-w-[320px] select-none overflow-hidden">
+    <section id="device-radar" className="relative mx-auto w-full max-w-[280px] sm:max-w-[320px] select-none overflow-hidden">
       {/* Radar visualization container — aspect-ratio 1:1 */}
       <div className="relative w-full" style={{ paddingBottom: '100%' }}>
         <div className="absolute inset-0">

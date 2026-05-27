@@ -35,7 +35,7 @@ export default function Layout() {
       {/* ─── Top Bar Floating Capsule ─────────────────────────── */}
       <header
         id="top-bar"
-        className="glass sticky top-4 z-40 mx-4 my-3 flex items-center justify-between px-5 py-3 rounded-2xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+        className="glass sticky top-4 z-40 mx-auto w-[calc(100%-2rem)] max-w-5xl my-3 flex items-center justify-between px-5 py-3 rounded-2xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.3)] backdrop-blur-xl"
       >
         {/* Logo */}
         <div className="flex items-center gap-2 group cursor-pointer">
@@ -86,7 +86,8 @@ export default function Layout() {
       {/* Pairing Modal */}
       <WebPairModal isOpen={pairModalOpen} onClose={() => setPairModalOpen(false)} />
 
-      <main className="flex-1 overflow-y-auto px-4 pt-6 pb-36 sm:px-6 lg:px-8 z-10 relative">
+      {/* ─── Main Content ────────────────────────────────────── */}
+      <main className="flex-1 w-full max-w-5xl mx-auto overflow-y-auto px-4 py-4 pb-28 sm:px-6 lg:px-8 z-10 relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

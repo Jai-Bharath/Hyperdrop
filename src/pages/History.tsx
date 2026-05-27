@@ -43,7 +43,7 @@ export default function HistoryPage() {
 
   return (
     <motion.div
-      className="mx-auto max-w-lg space-y-6"
+      className="mx-auto max-w-2xl space-y-6"
       initial="initial"
       animate="animate"
     >
