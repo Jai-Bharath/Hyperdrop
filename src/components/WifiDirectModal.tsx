@@ -157,7 +157,7 @@ export default function WifiDirectModal({ isOpen, onClose }: WifiDirectModalProp
             <div className="flex gap-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 p-3.5 text-xs text-cyan-300">
               <Wifi className="h-4 w-4 shrink-0 text-cyan-400 mt-0.5" />
               <p className="leading-relaxed">
-                <strong>No hotspot needed!</strong> Both devices connect to your existing WiFi router and transfer at full LAN speed — up to <strong className="text-cyan-400">300 MB/s</strong> on 5 GHz.
+                <strong>Works on both 2.4 GHz and 5 GHz!</strong> Connect both devices to your existing WiFi network (no hotspot needed) and transfer files directly at high speeds.
               </p>
             </div>
 

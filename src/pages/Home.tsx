@@ -258,7 +258,7 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1 leading-normal">
-                  Transfer via same WiFi router — no hotspot needed. Up to 300 MB/s on 5 GHz.
+                  Transfer via same WiFi router (supports both 2.4 GHz and 5 GHz) — no hotspot needed.
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
