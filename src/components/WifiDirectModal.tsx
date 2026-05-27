@@ -299,18 +299,21 @@ export default function WifiDirectModal({ isOpen, onClose }: WifiDirectModalProp
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 rounded-xl bg-surface border border-border py-6 px-4">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                >
-                  <Wifi className="h-8 w-8 text-slate-600" />
-                </motion.div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-slate-400">Detecting network…</p>
-                  <p className="text-[11px] text-slate-600 mt-1">
-                    Make sure the HyperDrop server is running
+              <div className="flex flex-col items-center gap-3.5 rounded-2xl bg-white/[0.01] border border-white/5 py-5 px-4">
+                <Wifi className="h-8 w-8 text-cyan-400 animate-pulse shrink-0" />
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-bold text-slate-200">Local Server Not Detected</p>
+                  <p className="text-[11px] text-slate-400 leading-normal">
+                    WiFi Direct utilizes your local router to transfer files directly at high speeds, which requires running the local server on your computer.
                   </p>
+                  <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3.5 text-left space-y-2 mt-2">
+                    <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">How to start Local Mode:</p>
+                    <ol className="text-[10px] text-slate-400 list-decimal pl-4.5 space-y-1.5">
+                      <li>Start the app on your laptop terminal with <code className="text-slate-200 font-mono bg-white/5 px-1 py-0.5 rounded">npm run dev</code>.</li>
+                      <li>Note your local network address (e.g. <code className="text-slate-200 font-mono bg-white/5 px-1 py-0.5 rounded">http://10.196.102.8:5173</code>).</li>
+                      <li>Open that address in the browser on both your laptop and phone to transfer files locally.</li>
+                    </ol>
+                  </div>
                 </div>
               </div>
             )}
