@@ -6,15 +6,14 @@
  */
 export async function uploadFileStream(
   file: File,
-  targetIp: string,
-  targetPort: number,
+  baseUrl: string,
   transferId: string,
   onProgress: (sent: number, speed: number) => void,
   onComplete: () => void,
   onError: (err: Error) => void,
   signal?: AbortSignal,
 ): Promise<XMLHttpRequest> {
-  const url = `http://${targetIp}:${targetPort}/api/upload-stream`;
+  const url = `${baseUrl}/api/upload-stream`;
   const xhr = new XMLHttpRequest();
 
   const startTime = Date.now();

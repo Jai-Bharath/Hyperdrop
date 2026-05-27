@@ -13,7 +13,7 @@ export function getSharedSocket(): Socket | null {
 const DEVICE_ID_KEY = 'hyperdrop-device-id';
 
 /** Default public cloud signaling server fallback */
-const CLOUD_SIGNAL_URL = 'https://hyperdrop-signal.onrender.com';
+const CLOUD_SIGNAL_URL = 'https://hyperdrop-tzjv.onrender.com';
 
 /**
  * Generate a random device ID or retrieve the persisted one.
@@ -102,14 +102,20 @@ export function useSocket(): Socket | null {
     // ── Resolve dynamic connection URL ──
     let targetUrl = socketUrl || ((import.meta as any).env.VITE_SOCKET_URL as string) || '';
     if (!targetUrl) {
-      const isCapacitor = window.location.origin.startsWith('capacitor://') || 
-                          (window.location.origin.startsWith('http://localhost') && !window.location.port);
-      if (isCapacitor) {
-        // Native mobile app connects directly to the Cloud Signaling Relay by default
+      const origin = window.location.origin;
+      const isCapacitor = origin.startsWith('capacitor://') || 
+                          (origin.startsWith('http://localhost') && !window.location.port);
+      const isLocalDev = origin.includes('localhost') || 
+                         origin.includes('127.0.0.1') || 
+                         /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
+
+      if (isCapacitor || !isLocalDev) {
+        // Native mobile app OR cloud-hosted frontend (Vercel/Netlify/etc.)
+        // → connect to the dedicated Cloud backend on Render
         targetUrl = CLOUD_SIGNAL_URL;
       } else {
-        // Standard Web App connects to its own origin (proxied or direct)
-        targetUrl = window.location.origin;
+        // Local dev / LAN — connects to its own origin (proxied or direct)
+        targetUrl = origin;
       }
     }
 
@@ -144,14 +150,19 @@ export function useSocket(): Socket | null {
           })
           .then((data: { ip: string; port: number; ftpPort: number }) => {
             useStore.getState().setServerInfo(data.ip, data.port, data.ftpPort);
+            useStore.getState().setApiBaseUrl(`http://${data.ip}:${data.port}`);
             console.log(`[useSocket] Local server LAN IP resolved: ${data.ip}:${data.port}`);
           })
           .catch((err) => {
             console.error('[useSocket] Failed to fetch local configuration (non-fatal):', err);
+            // Fallback: use targetUrl as the API base
+            useStore.getState().setApiBaseUrl(targetUrl);
           });
       } else {
-        // Cloud Server connection: reset local Server IP settings
+        // Cloud Server connection: use the cloud URL as the API base
         useStore.getState().setServerInfo('', 3001, 2121);
+        useStore.getState().setApiBaseUrl(targetUrl);
+        console.log(`[useSocket] Cloud API base URL set: ${targetUrl}`);
       }
 
       // Register device identification

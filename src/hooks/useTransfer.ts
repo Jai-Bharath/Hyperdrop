@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { useStore, type Device, type Protocol } from '../store/useStore';
 import { getSharedSocket } from './useSocket';
 import { uploadFileStream } from '../engine/streamUploadEngine';
-import { downloadFileParallel } from '../engine/parallelDownloadEngine';
 
 // Global map to hold AbortControllers for active transfers (avoids React re-renders)
 const abortControllers = new Map<string, AbortController>();
@@ -34,9 +33,8 @@ export function useTransfer() {
   const removeTransfer = useStore((s) => s.removeTransfer);
   const addHistoryEntry = useStore((s) => s.addHistoryEntry);
   
-  // Default to localhost/3001 if not set
-  const serverIp = useStore((s) => s.serverIp) || '127.0.0.1';
-  const serverPort = useStore((s) => s.serverPort) || 3001;
+  // API base URL — resolves to cloud URL or local LAN address
+  const apiBaseUrl = useStore((s) => s.apiBaseUrl) || 'http://127.0.0.1:3001';
 
   const activeTransfer = transfers.find((t) => t.id === activeTransferId) ?? null;
 
@@ -83,8 +81,7 @@ export function useTransfer() {
         // and remote uploads (sender=phone, receiver=laptop)
         await uploadFileStream(
           file,
-          serverIp,
-          serverPort,
+          apiBaseUrl,
           id,
           (transferred, speed) => {
             updateTransfer(id, { transferred, speed, status: 'transferring' });
@@ -114,7 +111,7 @@ export function useTransfer() {
         abortControllers.delete(id);
       }
     },
-    [addTransfer, updateTransfer, serverIp, serverPort],
+    [addTransfer, updateTransfer, apiBaseUrl],
   );
 
   const acceptTransfer = useCallback(
@@ -124,76 +121,19 @@ export function useTransfer() {
 
       updateTransfer(id, { status: 'transferring', startedAt: Date.now() });
 
-      const downloadUrl = `http://${serverIp}:${serverPort}/download/${encodeURIComponent(transfer.fileName)}?transferId=${id}`;
+      // Resolve destination download URL with transferId for progress tracking
+      const downloadUrl = `${apiBaseUrl}/download/${encodeURIComponent(transfer.fileName)}?transferId=${id}`;
 
-      console.log('[useTransfer] Launching high-speed parallel in-app segment downloader for', transfer.fileName);
-
-      const controller = new AbortController();
-      abortControllers.set(id, controller);
-
-      const socket = getSharedSocket();
-
-      try {
-        await downloadFileParallel(
-          transfer.fileName,
-          transfer.fileSize,
-          downloadUrl,
-          (received, speed) => {
-            updateTransfer(id, { transferred: received, speed, status: 'transferring' });
-            if (socket) {
-              socket.emit('transfer:progress', { id, transferred: received, speed });
-            }
-          },
-          (blobUrl) => {
-            // Download completed and stitched in memory!
-            updateTransfer(id, { status: 'done', transferred: transfer.fileSize });
-            if (socket) {
-              socket.emit('transfer:done', { id });
-            }
-            abortControllers.delete(id);
-
-            // Auto-append transfer history entry on completion
-            const duration = Math.max(1, (Date.now() - transfer.startedAt) / 1000);
-            useStore.getState().addHistoryEntry({
-              id: transfer.id,
-              fileName: transfer.fileName,
-              fileSize: transfer.fileSize,
-              protocol: transfer.protocol,
-              direction: transfer.direction,
-              speed: transfer.fileSize / duration,
-              duration,
-              completedAt: Date.now(),
-              deviceName: 'Sender',
-            });
-
-            // Trigger actual browser save dialog from the finished, local Blob url!
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = transfer.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Clean up Object URL
-            setTimeout(() => {
-              URL.revokeObjectURL(blobUrl);
-            }, 15000);
-          },
-          (error) => {
-            updateTransfer(id, { status: 'error', error: error.message });
-            if (socket) {
-              socket.emit('transfer:error', { id, error: error.message });
-            }
-            abortControllers.delete(id);
-          },
-          controller.signal
-        );
-      } catch (err) {
-        console.error('[useTransfer] In-app download initialization failed:', err);
-        abortControllers.delete(id);
-      }
+      console.log('[useTransfer] Launching direct stream download for', transfer.fileName);
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = transfer.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     },
-    [transfers, updateTransfer, serverIp, serverPort]
+    [transfers, updateTransfer, apiBaseUrl]
   );
 
   const rejectTransfer = useCallback(

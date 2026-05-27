@@ -58,6 +58,7 @@ interface HyperDropState {
   serverPort: number;
   ftpPort: number;
   socketUrl: string;
+  apiBaseUrl: string;
 
   // Devices
   devices: Device[];
@@ -81,6 +82,7 @@ interface HyperDropState {
   setConnected: (connected: boolean) => void;
   setServerInfo: (ip: string, port: number, ftpPort: number) => void;
   setSocketUrl: (socketUrl: string) => void;
+  setApiBaseUrl: (url: string) => void;
 
   // Actions — Devices
   addDevice: (device: Device) => void;
@@ -116,6 +118,7 @@ export const useStore = create<HyperDropState>()(
       serverPort: 3001,
       ftpPort: 2121,
       socketUrl: '',
+      apiBaseUrl: '',
       devices: [],
       selectedDevice: null,
       transfers: [],
@@ -128,6 +131,7 @@ export const useStore = create<HyperDropState>()(
       setConnected: (connected) => set({ connected }),
       setServerInfo: (serverIp, serverPort, ftpPort) => set({ serverIp, serverPort, ftpPort }),
       setSocketUrl: (socketUrl: string) => set({ socketUrl }),
+      setApiBaseUrl: (apiBaseUrl: string) => set({ apiBaseUrl }),
       setDeferredPrompt: (deferredPrompt) => set({ deferredPrompt }),
 
       // Devices

@@ -5,7 +5,7 @@ import { useStore, type Device } from '../store/useStore';
 const POLL_INTERVAL_MS = 3000;
 
 /** Devices not seen for this long are pruned (ms) */
-const STALE_THRESHOLD_MS = 15000;
+const STALE_THRESHOLD_MS = 30000;
 
 /**
  * Device discovery hook.
@@ -27,6 +27,7 @@ export function useDiscovery(): {
   const setDevices = useStore((s) => s.setDevices);
   const addDevice = useStore((s) => s.addDevice);
   const pruneStaleDevices = useStore((s) => s.pruneStaleDevices);
+  const apiBaseUrl = useStore((s) => s.apiBaseUrl);
   const scanningRef = useRef(false);
 
   /**
@@ -34,10 +35,12 @@ export function useDiscovery(): {
    * Deduplication is handled by addDevice (matches on device.id).
    */
   const fetchDevices = useCallback(async () => {
+    // Don't poll until we know the backend URL
+    if (!apiBaseUrl) return;
     scanningRef.current = true;
 
     try {
-      const response = await fetch('/api/devices');
+      const response = await fetch(`${apiBaseUrl}/api/devices`);
 
       if (!response.ok) {
         throw new Error(`Device discovery failed: ${response.status}`);
@@ -58,7 +61,7 @@ export function useDiscovery(): {
     } finally {
       scanningRef.current = false;
     }
-  }, [addDevice]);
+  }, [addDevice, apiBaseUrl]);
 
   // ── Polling loop ──
   useEffect(() => {

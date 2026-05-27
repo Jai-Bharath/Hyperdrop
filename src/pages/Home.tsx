@@ -85,76 +85,6 @@ export default function Home() {
     }, 250);
   };
 
-  const downloadPortableHtml = () => {
-    const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HyperDrop Portable Client</title>
-  <style>
-    body {
-      background-color: #0b0b0f;
-      color: #f8fafc;
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      text-align: center;
-    }
-    .card {
-      background: rgba(22, 22, 33, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
-      padding: 32px;
-      max-width: 400px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    }
-    h1 {
-      color: #6366f1;
-      margin-bottom: 8px;
-    }
-    p {
-      color: #94a3b8;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .btn {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 12px 24px;
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>HyperDrop Portable</h1>
-    <p>This is your standalone offline transfer client. Connect to the signaling server to start transferring files at up to 150 MB/s!</p>
-    <a href="${window.location.origin}" class="btn">Open Main Client</a>
-  </div>
-</body>
-</html>`;
-    
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'hyperdrop-portable.html';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <motion.div
       className="mx-auto max-w-lg space-y-8"
@@ -438,25 +368,6 @@ export default function Home() {
                     <li>It runs instantly like a native app on your home screen!</li>
                   </ul>
                 </div>
-              </div>
-              
-              {/* Standalone Portable Download */}
-              <div className="space-y-2 border-t border-white/5 pt-4 text-left">
-                <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-brand-500/10 text-[10px] text-brand-400 font-bold">★</span>
-                  Offline Standalone App
-                </h4>
-                <p className="text-[10px] text-slate-400 leading-relaxed">
-                  Download a standalone single-file portable offline version of the app directly to your device.
-                </p>
-                <button
-                  type="button"
-                  onClick={downloadPortableHtml}
-                  className="w-full py-2.5 rounded-xl border border-brand-500/20 bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 font-bold text-xs transition-all active:scale-98 flex items-center justify-center gap-1.5"
-                >
-                  <Download className="h-4 w-4" />
-                  Download Portable Client
-                </button>
               </div>
 
               <button
