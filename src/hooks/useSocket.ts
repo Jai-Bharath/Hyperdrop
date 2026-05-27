@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useStore, type Device } from '../store/useStore';
-import { handleAcceptedTransfer } from './useTransfer';
+import { handleAcceptedTransfer, triggerFileDownload } from './useTransfer';
 
 /** Shared socket instance for other hooks/components */
 let sharedSocket: Socket | null = null;
@@ -76,6 +76,11 @@ function getDevicePlatform(): string {
  * Programmatically join a manual WebRTC pairing room (e.g. from QR scan).
  */
 export function joinPairingRoom(roomId: string): void {
+  try {
+    localStorage.setItem('hyperdrop-paired-room-id', roomId);
+  } catch (e) {
+    console.error('[useSocket] Failed to save pairing room to localStorage:', e);
+  }
   if (sharedSocket) {
     console.log(`[useSocket] Requesting to join room: ${roomId}`);
     sharedSocket.emit('room:join', { roomId });
@@ -175,10 +180,24 @@ export function useSocket(): Socket | null {
         port: window.location.port ? parseInt(window.location.port, 10) : 80
       });
 
-      // If we have an active pairing Room ID parameter in URL or store, auto-rejoin
+      // If we have an active pairing Room ID parameter in URL or localStorage, auto-rejoin
       const urlParams = new URLSearchParams(window.location.search);
-      const room = urlParams.get('room');
+      let room = urlParams.get('room');
+      if (!room) {
+        try {
+          room = localStorage.getItem('hyperdrop-paired-room-id');
+        } catch {
+          // Ignore
+        }
+      } else {
+        try {
+          localStorage.setItem('hyperdrop-paired-room-id', room);
+        } catch {
+          // Ignore
+        }
+      }
       if (room) {
+        console.log(`[useSocket] Auto-rejoining pairing room: ${room}`);
         socket.emit('room:join', { roomId: room });
       }
     });
@@ -267,18 +286,9 @@ export function useSocket(): Socket | null {
         
         if (transfer) {
           // If we are the receiver and we accepted the transfer (status is transferring),
-          // trigger the browser download now that the file is fully ready on the server.
+          // trigger the download now that the file is fully ready on the server.
           if (transfer.direction === 'receive' && transfer.status === 'transferring') {
-            const apiBaseUrl = useStore.getState().apiBaseUrl || 'http://127.0.0.1:3001';
-            const downloadUrl = `${apiBaseUrl}/download/${encodeURIComponent(transfer.fileName)}?transferId=${payload.id}`;
-            console.log('[useSocket] File is ready on server. Triggering download:', downloadUrl);
-            
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = transfer.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            triggerFileDownload(transfer.fileName, payload.id);
           }
 
           const duration = Math.max(1, (Date.now() - transfer.startedAt) / 1000);

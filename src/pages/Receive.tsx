@@ -6,7 +6,7 @@ import {
   FileDown,
   Inbox,
 } from 'lucide-react';
-import { useTransfer } from '../hooks/useTransfer';
+import { useTransfer, triggerFileDownload } from '../hooks/useTransfer';
 import { useStore } from '../store/useStore';
 import { formatBytes } from '../utils/formatBytes';
 import TransferCard from '../components/TransferCard';
@@ -149,7 +149,8 @@ export default function ReceivePage() {
               <motion.li
                 key={transfer.id}
                 id={`received-${transfer.id}`}
-                className="flex items-center gap-3.5 rounded-2xl bg-white/[0.02] border border-white/5 px-4.5 py-3.5 backdrop-blur-md shadow-lg transition-all duration-300 hover:border-emerald-500/20 hover:bg-emerald-500/[0.01]"
+                className="flex items-center gap-3.5 rounded-2xl bg-white/[0.02] border border-white/5 px-4.5 py-3.5 backdrop-blur-md shadow-lg transition-all duration-300 hover:border-brand-500/20 hover:bg-brand-500/[0.02] cursor-pointer"
+                onClick={() => triggerFileDownload(transfer.fileName, transfer.id)}
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
                 layout
@@ -160,10 +161,23 @@ export default function ReceivePage() {
                     {transfer.fileName}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {formatBytes(transfer.fileSize)}
+                    {formatBytes(transfer.fileSize)} • Click to download again
                   </p>
                 </div>
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                  <button
+                    type="button"
+                    className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                    title="Download again"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerFileDownload(transfer.fileName, transfer.id);
+                    }}
+                  >
+                    <Download className="h-4 w-4 text-brand-400 animate-pulse" />
+                  </button>
+                </div>
               </motion.li>
             ))}
           </ul>

@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 import { useStore, type Device, type Protocol } from '../store/useStore';
 import { getSharedSocket } from './useSocket';
 import { uploadFileStream } from '../engine/streamUploadEngine';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 // Global map to hold AbortControllers for active transfers (avoids React re-renders)
 const abortControllers = new Map<string, AbortController>();
@@ -196,4 +198,61 @@ export function useTransfer() {
     cancelTransfer,
     removeTransfer,
   };
+}
+
+/**
+ * Download a file from the server.
+ * On native platforms (Capacitor), saves directly to local Documents.
+ * On web platforms, triggers standard browser anchor download.
+ */
+export async function triggerFileDownload(fileName: string, transferId: string): Promise<void> {
+  const apiBaseUrl = useStore.getState().apiBaseUrl || 'http://127.0.0.1:3001';
+  const downloadUrl = `${apiBaseUrl}/download/${encodeURIComponent(fileName)}?transferId=${transferId}`;
+  console.log('[useTransfer] triggerFileDownload called for:', fileName, 'URL:', downloadUrl);
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file from server: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      
+      const blobToBase64 = (b: Blob): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = reject;
+          reader.onload = () => {
+            const base64String = reader.result as string;
+            const base64 = base64String.split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(b);
+        });
+      };
+      
+      const base64 = await blobToBase64(blob);
+      
+      const result = await Filesystem.writeFile({
+        path: fileName,
+        data: base64,
+        directory: Directory.Documents,
+        recursive: true
+      });
+      
+      alert(`File downloaded successfully!\nSaved to Documents: ${fileName}`);
+      console.log('[useTransfer] File successfully saved natively:', result.uri);
+    } catch (err: any) {
+      console.error('[useTransfer] Native download failed:', err);
+      alert(`Error saving file natively: ${err.message || err}`);
+    }
+  } else {
+    // Fallback to standard browser anchor click
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }
