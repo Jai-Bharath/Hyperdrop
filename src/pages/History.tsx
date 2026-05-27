@@ -101,14 +101,14 @@ export default function HistoryPage() {
               <motion.li
                 key={entry.id}
                 id={`history-${entry.id}`}
-                className="card-hover flex items-center gap-4 !p-4"
+                className="card-hover flex items-start sm:items-center gap-3 sm:gap-4 !p-3 sm:!p-4"
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.04, duration: 0.2 }}
                 layout
               >
                 {/* File icon + direction arrow */}
-                <div className="relative shrink-0">
+                <div className="relative shrink-0 mt-1 sm:mt-0">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-light">
                     <FileText className="h-5 w-5 text-slate-400" />
                   </div>
@@ -127,38 +127,41 @@ export default function HistoryPage() {
                   </span>
                 </div>
 
-                {/* Details */}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-200">
-                    {entry.fileName}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="text-xs text-slate-500">
-                      {formatBytes(entry.fileSize)}
-                    </span>
-                    <span className="text-xs font-mono text-slate-400">
-                      {formatSpeed(entry.speed)}
-                    </span>
-                    <span
-                      className="badge text-[10px]"
-                      style={{
-                        backgroundColor: `${protocolColor}15`,
-                        color: protocolColor,
-                      }}
-                    >
-                      {PROTOCOL_LABELS[entry.protocol]}
-                    </span>
+                {/* Content Wrapper */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between min-w-0 flex-1 gap-2 sm:gap-4">
+                  {/* Details */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-200">
+                      {entry.fileName}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1">
+                      <span className="text-[11px] sm:text-xs text-slate-500">
+                        {formatBytes(entry.fileSize)}
+                      </span>
+                      <span className="text-[11px] sm:text-xs font-mono text-slate-400">
+                        {formatSpeed(entry.speed)}
+                      </span>
+                      <span
+                        className="badge text-[9px] sm:text-[10px]"
+                        style={{
+                          backgroundColor: `${protocolColor}15`,
+                          color: protocolColor,
+                        }}
+                      >
+                        {PROTOCOL_LABELS[entry.protocol]}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Timestamp + device */}
-                <div className="shrink-0 text-right">
-                  <p className="text-[11px] text-slate-500">
-                    {formatTimestamp(entry.completedAt)}
-                  </p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">
-                    {entry.deviceName}
-                  </p>
+                  {/* Timestamp + device */}
+                  <div className="shrink-0 flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t border-white/5 sm:border-0 pt-2 sm:pt-0">
+                    <p className="text-[10px] sm:text-[11px] text-slate-500">
+                      {formatTimestamp(entry.completedAt)}
+                    </p>
+                    <p className="text-[10px] text-slate-600 sm:mt-0.5 max-w-[120px] sm:max-w-none truncate">
+                      {entry.deviceName}
+                    </p>
+                  </div>
                 </div>
               </motion.li>
             );

@@ -120,7 +120,7 @@ export default function Layout() {
               }
             >
               {({ isActive }) => (
-                <div className="flex flex-col items-center gap-1.5 relative px-3 py-1">
+                <div className="flex flex-col items-center gap-1.5 relative px-2 sm:px-3 py-1">
                   <Icon className={`h-5 w-5 transition-all duration-300 ${isActive ? 'text-brand-400 scale-105 filter drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'text-slate-500'}`} />
                   <span className={`text-[9px] font-bold tracking-widest uppercase transition-colors duration-300 ${isActive ? 'text-brand-300' : 'text-slate-500'}`}>
                     {label}

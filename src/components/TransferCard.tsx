@@ -91,7 +91,7 @@ export default function TransferCard({ transfer, onCancel, onDismiss }: Transfer
       layout
     >
       {/* Top Details Row */}
-      <div className="flex items-center gap-5 w-full">
+      <div className="flex items-center gap-3 sm:gap-5 w-full">
         {/* Progress ring */}
         <ProgressRing progress={progress} size={64} strokeWidth={5} />
 
