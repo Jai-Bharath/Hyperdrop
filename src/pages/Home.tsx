@@ -26,6 +26,19 @@ export default function Home() {
   const serverIp = useStore((s) => s.serverIp);
   const serverPort = useStore((s) => s.serverPort);
   const ftpPort = useStore((s) => s.ftpPort);
+  const apiBaseUrl = useStore((s) => s.apiBaseUrl);
+
+  const getDisplayIp = () => {
+    if (serverIp) return serverIp;
+    if (apiBaseUrl) {
+      try {
+        return new URL(apiBaseUrl).hostname;
+      } catch {
+        return 'Cloud';
+      }
+    }
+    return 'Cloud';
+  };
 
   // PWA Prompt Zustand States
   const deferredPrompt = useStore((s) => s.deferredPrompt);
@@ -143,8 +156,8 @@ export default function Home() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/10 text-brand-400">
                 <Radio className="h-4.5 w-4.5" />
               </div>
-              <span className="font-mono text-[10px] font-bold text-brand-400 truncate max-w-full px-0.5 text-center">
-                {serverIp || '—'}
+              <span className="font-mono text-[10px] font-bold text-brand-400 truncate max-w-full px-0.5 text-center" title={getDisplayIp()}>
+                {getDisplayIp()}
               </span>
               <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest text-center">
                 Server IP
