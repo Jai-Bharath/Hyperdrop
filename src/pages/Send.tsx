@@ -53,8 +53,8 @@ export default function SendPage() {
         </p>
       </motion.div>
 
-      {/* Two-column layout on desktop */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Two-column layout on desktop/tablet */}
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         {/* Left: File Picker */}
         <motion.div variants={fadeUp} transition={{ delay: 0.05 }}>
           <div className="card space-y-4">
@@ -122,7 +122,9 @@ export default function SendPage() {
             >
               <Zap className="h-5 w-5" />
               Send {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} to{' '}
-              {selectedDevice?.name}
+              <span className="truncate max-w-[100px] sm:max-w-[200px] inline-block align-bottom" title={selectedDevice?.name}>
+                {selectedDevice?.name}
+              </span>
               <SendIcon className="h-4 w-4" />
             </button>
           </motion.div>

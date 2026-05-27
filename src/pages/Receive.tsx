@@ -100,12 +100,12 @@ export default function ReceivePage() {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
               <button
                 id={`accept-${transfer.id}`}
                 type="button"
                 onClick={() => acceptTransfer(transfer.id)}
-                className="btn-primary flex-1 flex items-center justify-center gap-2 py-2.5"
+                className="btn-primary flex-1 flex items-center justify-center gap-2 py-3 sm:py-2.5"
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Accept
@@ -114,7 +114,7 @@ export default function ReceivePage() {
                 id={`reject-${transfer.id}`}
                 type="button"
                 onClick={() => rejectTransfer(transfer.id)}
-                className="btn-ghost flex-1 flex items-center justify-center gap-2 py-2.5 border border-border hover:border-red-500/40 hover:text-red-400"
+                className="btn-ghost flex-1 flex items-center justify-center gap-2 py-3 sm:py-2.5 border border-border hover:border-red-500/40 hover:text-red-400"
               >
                 <XCircle className="h-4 w-4" />
                 Reject

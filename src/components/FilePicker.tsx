@@ -37,7 +37,7 @@ export default function FilePicker({ onFilesSelected, selectedFiles }: FilePicke
         id="file-drop-zone"
         className={`
           relative flex flex-col items-center justify-center gap-3
-          rounded-2xl border-2 border-dashed px-6 py-12
+          rounded-2xl border-2 border-dashed px-4 sm:px-6 py-8 sm:py-12
           cursor-pointer transition-all duration-200 group
           ${
             isDragActive
