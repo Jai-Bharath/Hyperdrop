@@ -51,6 +51,13 @@ export interface HistoryEntry {
 
 // ─── Store Interface ─────────────────────────────────────────
 
+export interface DisconnectAlert {
+  visible: boolean;
+  deviceName: string;
+  transferId: string;
+  fileName: string;
+}
+
 interface HyperDropState {
   // Connection
   connected: boolean;
@@ -67,6 +74,9 @@ interface HyperDropState {
   // Transfers
   transfers: Transfer[];
   activeTransferId: string | null;
+
+  // Disconnect Alert
+  disconnectAlert: DisconnectAlert | null;
 
   // History
   history: HistoryEntry[];
@@ -98,6 +108,10 @@ interface HyperDropState {
   removeTransfer: (id: string) => void;
   setActiveTransfer: (id: string | null) => void;
 
+  // Actions — Disconnect Alert
+  showDisconnectAlert: (alert: Omit<DisconnectAlert, 'visible'>) => void;
+  dismissDisconnectAlert: () => void;
+
   // Actions — History
   addHistoryEntry: (entry: HistoryEntry) => void;
   clearHistory: () => void;
@@ -123,6 +137,7 @@ export const useStore = create<HyperDropState>()(
       selectedDevice: null,
       transfers: [],
       activeTransferId: null,
+      disconnectAlert: null,
       history: [],
       selectedFiles: [],
       deferredPrompt: null,
@@ -197,6 +212,11 @@ export const useStore = create<HyperDropState>()(
         })),
 
       setActiveTransfer: (id) => set({ activeTransferId: id }),
+
+      // Disconnect Alert
+      showDisconnectAlert: (alert) =>
+        set({ disconnectAlert: { ...alert, visible: true } }),
+      dismissDisconnectAlert: () => set({ disconnectAlert: null }),
 
       // History
       addHistoryEntry: (entry) =>

@@ -305,20 +305,27 @@ export function setupHttpServer(app: Express, io: Server): void {
 
       console.log(`[httpServer] Starting raw stream upload for ${safeFileName} (${formatBytes(size)})`)
       
-      // Create write stream directly to the .part file with 1MB highWaterMark buffer
-      writeStream = createWriteStream(partPath, { highWaterMark: 1024 * 1024 })
+      // Create write stream directly to the .part file with 4MB highWaterMark buffer
+      writeStream = createWriteStream(partPath, { highWaterMark: 4 * 1024 * 1024 })
       
       transferLastSeen.set(transferId, Date.now())
       
       let receivedBytes = 0
       let lastProgressTime = Date.now()
       
+      let lastSeenTime = Date.now()
+
       req.on('data', (chunk) => {
         receivedBytes += chunk.length
-        transferLastSeen.set(transferId, Date.now())
+        
+        const now = Date.now()
+        // Throttle transferLastSeen updates to 1s intervals to reduce Map write overhead
+        if (now - lastSeenTime > 1000) {
+          transferLastSeen.set(transferId, now)
+          lastSeenTime = now
+        }
         
         // Throttle progress updates to 300ms intervals to prevent event loop lag
-        const now = Date.now()
         if (now - lastProgressTime > 300) {
           lastProgressTime = now
           io.emit('transfer:progress', {

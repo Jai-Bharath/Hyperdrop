@@ -12,6 +12,9 @@ const PORT = 3001
 // ─── Bootstrap ────────────────────────────────────────────────────────
 const app = express()
 const server = http.createServer(app)
+server.on('connection', (socket) => {
+  socket.setNoDelay(true)
+})
 
 const io = new Server(server, {
   cors: {

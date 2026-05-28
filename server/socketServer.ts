@@ -360,7 +360,24 @@ export function setupSocketServer(io: Server): void {
     socket.on('disconnect', (reason: string) => {
       const deviceId = socketDevices.get(socket.id)
       if (deviceId) {
+        const device = socketDevicesMap.get(deviceId)
         console.log(`[socket] Device disconnected (grace period started): ${deviceId} (${reason})`)
+
+        // Immediately notify peers involved in active transfers
+        for (const [transferId, mapping] of activeTransfers.entries()) {
+          if (mapping.senderSocketId === socket.id || mapping.receiverSocketId === socket.id) {
+            const otherSocketId = mapping.senderSocketId === socket.id
+              ? mapping.receiverSocketId
+              : mapping.senderSocketId
+            io.to(otherSocketId).emit('peer:disconnected', {
+              deviceId,
+              deviceName: device?.name || 'Unknown Device',
+              transferId,
+              reason,
+            })
+            console.log(`[socket] Immediate peer:disconnected sent for transfer ${transferId}`)
+          }
+        }
 
         // Clear any existing timeout for this device just in case
         const existingTimeout = disconnectTimeouts.get(deviceId)
@@ -402,7 +419,7 @@ export function setupSocketServer(io: Server): void {
               closeFileHandle(id).catch(() => {})
             }
           }
-        }, 10000) // 10 seconds grace period
+        }, 5000) // 5 seconds grace period
 
         disconnectTimeouts.set(deviceId, timeout)
       } else {

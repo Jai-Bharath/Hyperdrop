@@ -7,6 +7,7 @@ import Receive from './pages/Receive';
 import History from './pages/History';
 import { useSocket } from './hooks/useSocket';
 import { useStore } from './store/useStore';
+import DisconnectAlert from './components/DisconnectAlert';
 
 // ─── Error Boundary ─────────────────────────────────────────────────
 interface ErrorBoundaryProps {
@@ -77,7 +78,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 // Mounts the useSocket hook at the top level to preserve the connection
 function SocketManager({ children }: { children: ReactNode }) {
   useSocket();
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <DisconnectAlert />
+    </>
+  );
 }
 
 // ─── App Entry point ────────────────────────────────────────────────

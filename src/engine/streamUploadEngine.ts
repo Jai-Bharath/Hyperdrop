@@ -26,7 +26,7 @@ export async function uploadFileStream(
     if (event.lengthComputable) {
       const now = Date.now();
       const elapsed = (now - lastMeasuredTime) / 1000;
-      if (elapsed >= 0.3) {
+      if (elapsed >= 0.5) {
         currentSpeed = (event.loaded - lastMeasuredBytes) / elapsed;
         lastMeasuredBytes = event.loaded;
         lastMeasuredTime = now;

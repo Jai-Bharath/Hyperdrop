@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useStore, type Device } from '../store/useStore';
-import { handleAcceptedTransfer, triggerFileDownload } from './useTransfer';
+import { handleAcceptedTransfer, triggerFileDownload, cancelPendingUpload } from './useTransfer';
 
 /** Shared socket instance for other hooks/components */
 let sharedSocket: Socket | null = null;
@@ -329,6 +329,43 @@ export function useSocket(): Socket | null {
         });
       } catch {
         // Ignore
+      }
+    });
+
+    // ── Peer Disconnect Alert (Immediate notification) ──
+    socket.on('peer:disconnected', (payload: {
+      deviceId: string;
+      deviceName: string;
+      transferId: string;
+      reason: string;
+    }) => {
+      try {
+        console.log(`[useSocket] Peer disconnected: ${payload.deviceName} (${payload.reason})`);
+        
+        const transfers = useStore.getState().transfers;
+        const transfer = transfers.find((t) => t.id === payload.transferId);
+        
+        if (transfer && (transfer.status === 'transferring' || transfer.status === 'pending')) {
+          // Abort the upload if we are the sender
+          if (transfer.direction === 'send') {
+            cancelPendingUpload(payload.transferId);
+          }
+          
+          // Mark transfer as errored
+          updateTransfer(payload.transferId, {
+            status: 'error',
+            error: `${payload.deviceName} disconnected`,
+          });
+          
+          // Show prominent disconnect alert
+          useStore.getState().showDisconnectAlert({
+            deviceName: payload.deviceName,
+            transferId: payload.transferId,
+            fileName: transfer.fileName,
+          });
+        }
+      } catch (err) {
+        console.error('[useSocket] Error handling peer:disconnected:', err);
       }
     });
 
