@@ -22,19 +22,19 @@ export default function ReceivePage() {
   const incoming = transfers.filter(
     (t) => t.direction === 'receive' && t.status === 'pending',
   );
-  const active = transfers.filter(
+  const currentTransfers = transfers.filter(
     (t) =>
       t.direction === 'receive' &&
-      (t.status === 'transferring' || t.status === 'verifying'),
+      (t.status === 'transferring' ||
+        t.status === 'verifying' ||
+        t.status === 'cancelled' ||
+        t.status === 'error'),
   );
   const completed = transfers.filter(
     (t) => t.direction === 'receive' && t.status === 'done',
   );
-  const dismissed = transfers.filter(
-    (t) => t.direction === 'receive' && (t.status === 'cancelled' || t.status === 'error'),
-  );
 
-  const hasAnything = incoming.length > 0 || active.length > 0 || completed.length > 0 || dismissed.length > 0;
+  const hasAnything = incoming.length > 0 || currentTransfers.length > 0 || completed.length > 0;
 
   return (
     <motion.div
@@ -124,17 +124,10 @@ export default function ReceivePage() {
         ))}
       </AnimatePresence>
 
-      {/* ─── Active Transfers ──────────────────────────────── */}
+      {/* ─── Current Transfers (Active, Cancelled, Errored) ── */}
       <AnimatePresence>
-        {active.map((transfer) => (
+        {currentTransfers.map((transfer) => (
           <TransferCard key={transfer.id} transfer={transfer} onCancel={cancelTransfer} onDismiss={(id) => removeTransfer(id)} />
-        ))}
-      </AnimatePresence>
-
-      {/* ─── Cancelled / Errored Transfers ──────────────── */}
-      <AnimatePresence>
-        {dismissed.map((transfer) => (
-          <TransferCard key={transfer.id} transfer={transfer} onDismiss={(id) => removeTransfer(id)} />
         ))}
       </AnimatePresence>
 

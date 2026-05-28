@@ -313,6 +313,7 @@ export function useSocket(): Socket | null {
 
     socket.on('transfer:error', (payload: { id: string; error: string }) => {
       try {
+        cancelPendingUpload(payload.id);
         updateTransfer(payload.id, {
           status: 'error',
           error: payload.error,
@@ -324,6 +325,7 @@ export function useSocket(): Socket | null {
 
     socket.on('transfer:cancelled', (payload: { id: string }) => {
       try {
+        cancelPendingUpload(payload.id);
         updateTransfer(payload.id, {
           status: 'cancelled',
         });
