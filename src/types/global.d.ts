@@ -72,9 +72,26 @@ declare module 'multicast-dns' {
 
 interface ImportMetaEnv {
   readonly VITE_SERVER_PORT?: string;
-  readonly VITE_DISCORD_WEBHOOK_URL?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+}
+
+/* HyperDrop Desktop (Electron) API — exposed via preload.ts */
+interface HyperDropDesktopAPI {
+  openFileDialog: () => Promise<string[]>;
+  openFolderDialog: () => Promise<string[]>;
+  getVersion: () => Promise<string>;
+  getDownloadsPath: () => Promise<string>;
+  notify: (title: string, body: string) => void;
+  platform: string;
+  isElectron: boolean;
+}
+
+interface Window {
+  __ELECTRON__?: boolean;
+  hyperdropDesktop?: HyperDropDesktopAPI;
+  deferredPrompt?: any;
+  onDeferredPromptCaptured?: (e: any) => void;
 }
