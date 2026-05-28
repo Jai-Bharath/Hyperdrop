@@ -1,18 +1,25 @@
 {
   "name": "hyperdrop",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
+  "main": "desktop/main.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx watch server/index.ts\"",
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
+    "dev:all": "concurrently -n client,server -c cyan,green \"vite\" \"tsx watch server/index.ts\"",
     "build": "tsc --noEmit && vite build",
+    "build:offline": "tsc --noEmit && vite build && tsc -p tsconfig.server.json",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "cap:sync": "npx cap sync",
     "cap:android": "npx cap open android",
-    "cap:ios": "npx cap open ios"
+    "cap:ios": "npx cap open ios",
+    "electron:dev": "concurrently -n vite,server,electron -c cyan,green,magenta \"vite\" \"tsx watch server/index.ts\" \"wait-on http://localhost:5173 && NODE_ENV=development electron desktop/main.ts\"",
+    "electron:build": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.js",
+    "electron:build:win": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.js --win",
+    "electron:build:linux": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.js --linux"
   },
   "dependencies": {
     "@capacitor/core": "^6.0.0",
@@ -50,10 +57,13 @@
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.0.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "tsx": "^4.10.0",
     "typescript": "^5.4.5",
-    "vite": "^5.2.0"
+    "vite": "^5.2.0",
+    "wait-on": "^7.2.0"
   }
 }

@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Send from './pages/Send';
 import Receive from './pages/Receive';
 import History from './pages/History';
+import Settings from './pages/Settings';
 import { useSocket } from './hooks/useSocket';
 import { useStore } from './store/useStore';
 import DisconnectAlert from './components/DisconnectAlert';
@@ -129,6 +130,7 @@ export default function App() {
               <Route path="send" element={<Send />} />
               <Route path="receive" element={<Receive />} />
               <Route path="history" element={<History />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
         </SocketManager>

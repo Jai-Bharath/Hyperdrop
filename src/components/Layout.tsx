@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Send, Download, Clock, Zap, QrCode } from 'lucide-react';
+import { Home, Send, Download, Clock, Settings, Zap, QrCode } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import WebPairModal from './WebPairModal';
 import LocalErrorBoundary from './LocalErrorBoundary';
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: '/send', icon: Send, label: 'Send' },
   { to: '/receive', icon: Download, label: 'Receive' },
   { to: '/history', icon: Clock, label: 'History' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ] as const;
 
 const pageVariants = {
