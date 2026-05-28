@@ -1,3 +1,4 @@
+// @ts-ignore
 import mdns from 'multicast-dns';
 import { getLocalIp } from './httpServer.js';
 import { hostname, platform } from 'os';

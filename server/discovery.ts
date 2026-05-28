@@ -1,3 +1,4 @@
+// @ts-ignore
 import mdns from 'multicast-dns'
 import { getLocalIp } from './httpServer.js'
 import { hostname, platform } from 'os'
@@ -38,10 +39,10 @@ export function startDiscovery(): void {
     mdnsInstance = mdns()
 
     // ── Respond to queries for our service ──────────────────────
-    mdnsInstance.on('query', (query) => {
+    mdnsInstance.on('query', (query: any) => {
       if (!query.questions) return
       const isForUs = query.questions.some(
-        (q) =>
+        (q: any) =>
           q.name === SERVICE_NAME ||
           q.name === '_services._dns-sd._udp.local',
       )
@@ -81,17 +82,17 @@ export function startDiscovery(): void {
     })
  
     // ── Process incoming responses ──────────────────────────────
-    mdnsInstance.on('response', (response) => {
+    mdnsInstance.on('response', (response: any) => {
       if (!response.answers) return
       // Look for HyperDrop SRV records
       const srvRecord = response.answers.find(
-        (a) => a.name === SERVICE_NAME && a.type === 'SRV',
+        (a: any) => a.name === SERVICE_NAME && a.type === 'SRV',
       )
       if (!srvRecord) return
  
       // Extract device info from TXT records
       const txtRecord = response.answers.find(
-        (a) => a.name === SERVICE_NAME && a.type === 'TXT',
+        (a: any) => a.name === SERVICE_NAME && a.type === 'TXT',
       )
  
       let deviceIp = ''
@@ -111,7 +112,7 @@ export function startDiscovery(): void {
  
       // Also try A record for IP
       if (!deviceIp) {
-        const aRecord = response.answers.find((a) => a.type === 'A')
+        const aRecord = response.answers.find((a: any) => a.type === 'A')
         if (aRecord && aRecord.type === 'A') {
           deviceIp = aRecord.data as string
         }
