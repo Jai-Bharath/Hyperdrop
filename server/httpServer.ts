@@ -363,6 +363,13 @@ export function setupHttpServer(app: Express, io: Server): void {
           
           transferLastSeen.delete(transferId)
           
+          // Emit final 100% progress update to guarantee client registers full completion
+          io.emit('transfer:progress', {
+            id: transferId,
+            transferred: size,
+            speed: 0,
+          })
+
           io.emit('transfer:done', {
             id: transferId,
             fileName: safeFileName,

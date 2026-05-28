@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, AlertCircle, Loader2, Ban, Star, Send } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, Loader2, Ban, Star, Send, Download } from 'lucide-react';
 import type { Transfer, TransferStatus } from '../store/useStore';
 import { formatBytes } from '../utils/formatBytes';
 import ProgressRing from './ProgressRing';
 import SpeedBadge from './SpeedBadge';
 import { submitFeedbackToDiscord } from '../utils/feedback';
+import { triggerFileDownload } from '../hooks/useTransfer';
 
 interface TransferCardProps {
   transfer: Transfer;
@@ -160,6 +161,20 @@ export default function TransferCard({ transfer, onCancel, onDismiss }: Transfer
           </button>
         )}
       </div>
+
+      {/* Manual download button for receiver on completion */}
+      {transfer.status === 'done' && transfer.direction === 'receive' && (
+        <div className="mt-4 flex gap-2 border-t border-white/5 pt-4">
+          <button
+            type="button"
+            onClick={() => triggerFileDownload(transfer.fileName, transfer.id)}
+            className="flex-1 btn-primary py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-semibold glow-brand"
+          >
+            <Download className="h-4 w-4 animate-pulse" />
+            <span>Download / Save File</span>
+          </button>
+        </div>
+      )}
 
       {/* Glassmorphic Star-Rating & Suggestion Feedback Drawer */}
       <AnimatePresence>

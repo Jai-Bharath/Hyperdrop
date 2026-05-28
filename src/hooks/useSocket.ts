@@ -269,11 +269,19 @@ export function useSocket(): Socket | null {
       speed: number;
     }) => {
       try {
+        const transfers = useStore.getState().transfers;
+        const transfer = transfers.find((t) => t.id === payload.id);
+        const isDone = transfer && payload.transferred >= transfer.fileSize;
+
         updateTransfer(payload.id, {
           transferred: payload.transferred,
           speed: payload.speed,
-          status: 'transferring',
+          status: isDone ? 'done' : 'transferring',
         });
+
+        if (isDone && transfer && transfer.direction === 'receive' && transfer.status === 'transferring') {
+          triggerFileDownload(transfer.fileName, payload.id);
+        }
       } catch {
         // Ignore
       }
