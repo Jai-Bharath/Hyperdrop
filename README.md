@@ -256,6 +256,14 @@ npx cap sync
 npx cap open android   # opens Android Studio
 ```
 
+### Offline Build
+
+```bash
+# Build the project offline
+npm run build
+npx cap sync --inline
+```
+
 ### Docker
 
 ```bash
