@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 // ─── Type Definitions ────────────────────────────────────────
 
-export type Protocol = 'parallel-http' | 'ftp' | 'webrtc' | 'http-chunk' | 'detecting';
+export type Protocol = 'parallel-http' | 'http-stream' | 'ftp' | 'webrtc' | 'http-chunk' | 'detecting';
 export type TransferDirection = 'send' | 'receive';
 export type TransferStatus = 'pending' | 'transferring' | 'verifying' | 'done' | 'error' | 'cancelled';
 

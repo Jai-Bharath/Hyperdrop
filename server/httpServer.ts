@@ -406,11 +406,18 @@ export function setupHttpServer(app: Express, io: Server): void {
       const { getDiscoveredDevices } = await import('./discovery.js')
       const mDnsDevices = getDiscoveredDevices()
 
+      const { getUdpDiscoveredDevices } = await import('./udpBroadcast.js')
+      const udpDevices = getUdpDiscoveredDevices()
+
       const { socketDevicesMap } = await import('./socketServer.js')
       const socketDevices = Array.from(socketDevicesMap.values())
 
-      // Merge and deduplicate by device ID (Socket.IO active registrations override/supplement mDNS)
+      // Merge and deduplicate by device ID
+      // Priority: Socket.IO > mDNS > UDP broadcast
       const allDevicesMap = new Map<string, any>()
+      for (const d of udpDevices) {
+        allDevicesMap.set(d.id, d)
+      }
       for (const d of mDnsDevices) {
         allDevicesMap.set(d.id, d)
       }
@@ -519,9 +526,50 @@ export function setupHttpServer(app: Express, io: Server): void {
     }
   })
 
-  // ── GET /healthz — health check for Render ──────────────────────
+  // ── GET /healthz — health check ─────────────────────────────────
   app.get('/healthz', (_req: Request, res: Response) => {
     res.json({ status: 'healthy' })
+  })
+
+  // ── POST /api/probe — speed probe for adaptive chunking ─────────
+  app.post('/api/probe', (req: Request, res: Response) => {
+    const chunks: Buffer[] = []
+    req.on('data', (chunk: Buffer) => {
+      chunks.push(chunk)
+    })
+    req.on('end', () => {
+      const totalBytes = chunks.reduce((sum, c) => sum + c.length, 0)
+      // Echo the same amount of data back for round-trip measurement
+      const echoData = Buffer.alloc(totalBytes, 0x42)
+      res.setHeader('Content-Type', 'application/octet-stream')
+      res.setHeader('Content-Length', totalBytes)
+      res.send(echoData)
+    })
+    req.on('error', () => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Probe failed' })
+      }
+    })
+  })
+
+  // ── GET /api/transfer/:id/status — resume state for a transfer ──
+  app.get('/api/transfer/:id/status', (_req: Request, res: Response) => {
+    try {
+      const transferId = _req.params.id
+      const received = transferState.get(transferId)
+      if (!received) {
+        res.json({ exists: false, completedChunks: [] })
+        return
+      }
+      res.json({
+        exists: true,
+        completedChunks: Array.from(received),
+        totalReceived: received.size,
+      })
+    } catch (err) {
+      console.error('[httpServer] Transfer status error:', err)
+      res.status(500).json({ error: 'Failed to get transfer status' })
+    }
   })
 
   // ── GET /browse — HTML listing of all files ─────────────────────

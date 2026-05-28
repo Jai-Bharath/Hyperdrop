@@ -5,6 +5,7 @@ import { setupHttpServer, getLocalIp, DOWNLOADS_DIR } from './httpServer.js'
 import { setupSocketServer } from './socketServer.js'
 import { startFtpServer } from './ftpServer.js'
 import { startDiscovery, stopDiscovery } from './discovery.js'
+import { startUdpBroadcast, stopUdpBroadcast } from './udpBroadcast.js'
 
 // ─── Constants ────────────────────────────────────────────────────────
 const PORT = 3001
@@ -50,6 +51,9 @@ server.listen(PORT, '0.0.0.0', () => {
 
   // Start mDNS discovery
   startDiscovery()
+
+  // Start UDP broadcast discovery (fallback for hotspot/Android)
+  startUdpBroadcast()
 })
 
 // ─── Global error handlers — log but NEVER crash ──────────────────────
@@ -68,6 +72,11 @@ const shutdown = () => {
     stopDiscovery()
   } catch (err) {
     console.error('[shutdown] Failed to stop mDNS discovery:', err)
+  }
+  try {
+    stopUdpBroadcast()
+  } catch (err) {
+    console.error('[shutdown] Failed to stop UDP broadcast:', err)
   }
   server.close(() => {
     console.log('[shutdown] HTTP server closed')
