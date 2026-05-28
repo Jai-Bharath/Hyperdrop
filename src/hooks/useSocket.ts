@@ -13,9 +13,6 @@ export function getSharedSocket(): Socket | null {
 /** LocalStorage key for persistent device identity */
 const DEVICE_ID_KEY = 'hyperdrop-device-id';
 
-/** Default public cloud signaling server fallback */
-const CLOUD_SIGNAL_URL = 'https://hyperdrop-tzjv.onrender.com';
-
 /**
  * Generate a random device ID or retrieve the persisted one.
  */
@@ -73,6 +70,41 @@ function getDevicePlatform(): string {
 }
 
 /**
+ * Resolve the local server URL — fully offline, zero cloud.
+ *
+ * Priority:
+ *   1. Explicit socketUrl from Zustand store (set by manual IP entry / QR scan)
+ *   2. Same origin (dev proxy or production build served from server)
+ *   3. Capacitor native → stored LAN IP or localhost fallback
+ */
+function resolveLocalServerUrl(socketUrl: string): string {
+  // 1. Explicit URL already set (from QR scan, manual entry, or settings)
+  if (socketUrl) return socketUrl;
+
+  const origin = window.location.origin;
+
+  // 2. Capacitor native app — connect to stored server IP or localhost
+  const isCapacitor = origin.startsWith('capacitor://') ||
+                      (origin.startsWith('http://localhost') && !window.location.port);
+  if (isCapacitor) {
+    // Try to recover saved server IP from last successful connection
+    try {
+      const savedIp = localStorage.getItem('hyperdrop-last-server-ip');
+      if (savedIp) return `http://${savedIp}:3001`;
+    } catch { /* ignore */ }
+    return 'http://localhost:3001';
+  }
+
+  // 3. Electron app — always localhost since server is embedded
+  if (typeof window !== 'undefined' && (window as any).__ELECTRON__) {
+    return 'http://localhost:3001';
+  }
+
+  // 4. Standard web — use same origin (Vite proxy in dev, or direct in prod)
+  return origin;
+}
+
+/**
  * Programmatically join a manual WebRTC pairing room (e.g. from QR scan).
  */
 export function joinPairingRoom(roomId: string): void {
@@ -90,8 +122,8 @@ export function joinPairingRoom(roomId: string): void {
 }
 
 /**
- * Socket.IO client connection hook.
- * Connects reactively based on the `socketUrl` store state.
+ * Socket.IO client connection hook — FULLY OFFLINE, LOCAL ONLY.
+ * Connects to the local embedded HyperDrop server. Zero cloud dependencies.
  */
 export function useSocket(): Socket | null {
   const socketRef = useRef<Socket | null>(null);
@@ -105,27 +137,10 @@ export function useSocket(): Socket | null {
   const addTransfer = useStore((s) => s.addTransfer);
 
   useEffect(() => {
-    // ── Resolve dynamic connection URL ──
-    let targetUrl = socketUrl || ((import.meta as any).env.VITE_SOCKET_URL as string) || '';
-    if (!targetUrl) {
-      const origin = window.location.origin;
-      const isCapacitor = origin.startsWith('capacitor://') || 
-                          (origin.startsWith('http://localhost') && !window.location.port);
-      const isLocalDev = origin.includes('localhost') || 
-                         origin.includes('127.0.0.1') || 
-                         /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
+    // ── Resolve LOCAL connection URL — no cloud, no external servers ──
+    const targetUrl = resolveLocalServerUrl(socketUrl);
 
-      if (isCapacitor || !isLocalDev) {
-        // Native mobile app OR cloud-hosted frontend (Vercel/Netlify/etc.)
-        // → connect to the dedicated Cloud backend on Render
-        targetUrl = CLOUD_SIGNAL_URL;
-      } else {
-        // Local dev / LAN — connects to its own origin (proxied or direct)
-        targetUrl = origin;
-      }
-    }
-
-    console.log(`[useSocket] Connecting to socket server: ${targetUrl}`);
+    console.log(`[useSocket] Connecting to LOCAL server: ${targetUrl}`);
 
     const socket = io(targetUrl, {
       transports: ['websocket', 'polling'],
@@ -142,34 +157,27 @@ export function useSocket(): Socket | null {
     socket.on('connect', () => {
       setConnected(true);
       console.log(`[useSocket] Connected! Socket ID: ${socket.id}`);
-      
-      // Load server configuration if connected to a local HyperDrop backend
-      const isLocalhostOrLAN = targetUrl.includes('localhost') || 
-                               targetUrl.includes('127.0.0.1') || 
-                               /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(targetUrl.replace(/^https?:\/\//, ''));
 
-      if (isLocalhostOrLAN) {
-        fetch(`${targetUrl}/api/info`)
-          .then((res) => {
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-          })
-          .then((data: { ip: string; port: number; ftpPort: number }) => {
-            useStore.getState().setServerInfo(data.ip, data.port, data.ftpPort);
-            useStore.getState().setApiBaseUrl(`http://${data.ip}:${data.port}`);
-            console.log(`[useSocket] Local server LAN IP resolved: ${data.ip}:${data.port}`);
-          })
-          .catch((err) => {
-            console.error('[useSocket] Failed to fetch local configuration (non-fatal):', err);
-            // Fallback: use targetUrl as the API base
-            useStore.getState().setApiBaseUrl(targetUrl);
-          });
-      } else {
-        // Cloud Server connection: use the cloud URL as the API base
-        useStore.getState().setServerInfo('', 3001, 2121);
-        useStore.getState().setApiBaseUrl(targetUrl);
-        console.log(`[useSocket] Cloud API base URL set: ${targetUrl}`);
-      }
+      // Fetch server info from local backend
+      fetch(`${targetUrl}/api/info`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+        })
+        .then((data: { ip: string; port: number; ftpPort: number }) => {
+          useStore.getState().setServerInfo(data.ip, data.port, data.ftpPort);
+          useStore.getState().setApiBaseUrl(`http://${data.ip}:${data.port}`);
+          // Save the LAN IP for future Capacitor reconnections
+          try {
+            localStorage.setItem('hyperdrop-last-server-ip', data.ip);
+          } catch { /* ignore */ }
+          console.log(`[useSocket] Local server LAN IP resolved: ${data.ip}:${data.port}`);
+        })
+        .catch((err) => {
+          console.error('[useSocket] Failed to fetch local configuration (non-fatal):', err);
+          // Fallback: use targetUrl as the API base
+          useStore.getState().setApiBaseUrl(targetUrl);
+        });
 
       // Register device identification
       socket.emit('device:register', {
@@ -177,7 +185,7 @@ export function useSocket(): Socket | null {
         name: getDeviceFriendlyName(),
         platform: getDevicePlatform(),
         supports5GHz: true,
-        port: window.location.port ? parseInt(window.location.port, 10) : 80
+        port: window.location.port ? parseInt(window.location.port, 10) : 3001,
       });
 
       // If we have an active pairing Room ID parameter in URL or localStorage, auto-rejoin
