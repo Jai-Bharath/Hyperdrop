@@ -1,0 +1,50 @@
+directories:
+  output: release
+  buildResources: public
+appId: app.hyperdrop.desktop
+productName: HyperDrop
+copyright: Copyright © 2024 HyperDrop
+files:
+  - filter:
+      - dist/**/*
+      - server-dist/**/*
+      - package.json
+extraMetadata:
+  main: server-dist/desktop/main.js
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: public/icon.png
+  artifactName: HyperDrop-${version}-Setup.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: HyperDrop
+  installerIcon: public/icon.png
+  uninstallerIcon: public/icon.png
+linux:
+  target:
+    - target: deb
+      arch:
+        - x64
+    - target: AppImage
+      arch:
+        - x64
+  icon: public/icon.png
+  category: Utility
+  artifactName: hyperdrop_${version}_${arch}.${ext}
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: public/icon.png
+  artifactName: HyperDrop-${version}.${ext}
+publish: null
+electronVersion: 31.7.7

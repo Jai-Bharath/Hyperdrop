@@ -3,7 +3,7 @@
  *
  * Builds:
  *   - Windows: NSIS installer (.exe)
- *   - Linux: AppImage
+ *   - Linux: AppImage, DEB package
  *   - macOS: DMG (optional)
  */
 
@@ -19,13 +19,12 @@ const config = {
 
   files: [
     'dist/**/*',
-    'server/**/*.js',
-    'desktop/**/*.js',
+    'server-dist/**/*',
     'package.json',
   ],
 
   extraMetadata: {
-    main: 'desktop/main.js',
+    main: 'server-dist/desktop/main.js',
   },
 
   // ── Windows ──
@@ -55,13 +54,17 @@ const config = {
   linux: {
     target: [
       {
+        target: 'deb',
+        arch: ['x64'],
+      },
+      {
         target: 'AppImage',
         arch: ['x64'],
       },
     ],
     icon: 'public/icon.png',
     category: 'Utility',
-    artifactName: 'HyperDrop-${version}.${ext}',
+    artifactName: 'hyperdrop_${version}_${arch}.${ext}',
   },
 
   // ── macOS ──

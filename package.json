@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "main": "desktop/main.js",
+  "main": "server-dist/desktop/main.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx watch server/index.ts\"",
     "dev:client": "vite",
@@ -17,9 +17,9 @@
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "electron:dev": "concurrently -n vite,server,electron -c cyan,green,magenta \"vite\" \"tsx watch server/index.ts\" \"wait-on http://localhost:5173 && NODE_ENV=development electron desktop/main.ts\"",
-    "electron:build": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.js",
-    "electron:build:win": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.js --win",
-    "electron:build:linux": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.js --linux"
+    "electron:build": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.cjs",
+    "electron:build:win": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.cjs --win",
+    "electron:build:linux": "npm run build && tsc -p tsconfig.server.json && electron-builder --config electron-builder.config.cjs --linux"
   },
   "dependencies": {
     "@capacitor/core": "^6.0.0",
