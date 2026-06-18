@@ -1,0 +1,39 @@
+# Workstation Node.js dependencies
+node_modules/
+
+# Build assets
+dist/
+dist-ssr/
+*.local
+out/
+
+# Local configuration and environment secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Native OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE structures
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary runtime and user-generated download folders
+hyperdrop-downloads/
+files/
+*.part
+
+# Capacitor runtime build outputs
+android/app/build/
+android/app/src/main/assets/public/
+ios/App/App/public/
