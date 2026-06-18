@@ -493,11 +493,13 @@ export function useSocket(): Socket | null {
 
     socket.on('webrtc:answer', (payload: { fromId: string; answer: RTCSessionDescriptionInit }) => {
       try {
-        for (const [, rtc] of webrtcTransfers.entries()) {
-          rtc.handleAnswer(payload.answer).catch((err) => {
-            console.error('[useSocket] WebRTC answer failed:', err);
-          });
-          break;
+        for (const rtc of webrtcTransfers.values()) {
+          if (rtc.deviceId === payload.fromId) {
+            rtc.handleAnswer(payload.answer).catch((err) => {
+              console.error('[useSocket] WebRTC answer failed:', err);
+            });
+            break;
+          }
         }
       } catch (err) {
         console.error('[useSocket] Error handling webrtc:answer:', err);
@@ -507,7 +509,9 @@ export function useSocket(): Socket | null {
     socket.on('webrtc:ice', (payload: { fromId: string; candidate: RTCIceCandidateInit }) => {
       try {
         for (const rtc of webrtcTransfers.values()) {
-          rtc.handleIceCandidate(payload.candidate).catch(() => {});
+          if (rtc.deviceId === payload.fromId) {
+            rtc.handleIceCandidate(payload.candidate).catch(() => {});
+          }
         }
       } catch { /* ignore */ }
     });

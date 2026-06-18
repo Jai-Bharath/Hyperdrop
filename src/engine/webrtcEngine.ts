@@ -1,7 +1,7 @@
 import type { Socket } from 'socket.io-client';
 
-/** WebRTC DataChannel chunk size: 1 MB (smaller MTU than HTTP) */
-const WEBRTC_CHUNK_SIZE = 1 * 1024 * 1024;
+/** WebRTC DataChannel chunk size: 64 KB (industry standard for compatibility and reliability) */
+const WEBRTC_CHUNK_SIZE = 64 * 1024;
 
 /** DataChannel label */
 const CHANNEL_LABEL = 'hyperdrop-file';
@@ -35,7 +35,7 @@ export class WebRTCTransfer {
   private pc: RTCPeerConnection;
   private dc: RTCDataChannel | null = null;
   private socket: Socket;
-  private deviceId: string;
+  public deviceId: string;
   private closed = false;
 
   // Speed tracking
@@ -87,13 +87,17 @@ export class WebRTCTransfer {
 
       this.dc.onopen = async () => {
         try {
+          if (!this.dc || this.dc.readyState !== 'open') {
+            throw new Error('DataChannel closed or not open');
+          }
+
           // Send metadata first
           const metadata: FileMetadata = {
             fileName: file.name,
             fileSize: file.size,
             totalChunks,
           };
-          this.dc!.send(JSON.stringify(metadata));
+          this.dc.send(JSON.stringify(metadata));
 
           let bytesSent = 0;
           let currentSpeed = 0;
@@ -113,7 +117,9 @@ export class WebRTCTransfer {
           }, 500);
 
           for (let i = 0; i < totalChunks; i++) {
-            if (this.closed) return;
+            if (this.closed || !this.dc || this.dc.readyState !== 'open') {
+              throw new Error('WebRTC connection lost');
+            }
 
             const offset = i * WEBRTC_CHUNK_SIZE;
             const end = Math.min(offset + WEBRTC_CHUNK_SIZE, file.size);
@@ -122,7 +128,7 @@ export class WebRTCTransfer {
 
             // Back-pressure: wait if buffer is full
             while (
-              this.dc!.bufferedAmount > this.dc!.bufferedAmountLowThreshold &&
+              this.dc.bufferedAmount > this.dc.bufferedAmountLowThreshold &&
               !this.closed
             ) {
               await new Promise<void>((resolve) => {
@@ -134,9 +140,11 @@ export class WebRTCTransfer {
               });
             }
 
-            if (this.closed) return;
+            if (this.closed || !this.dc || this.dc.readyState !== 'open') {
+              throw new Error('WebRTC connection lost');
+            }
 
-            this.dc!.send(chunkBuffer);
+            this.dc.send(chunkBuffer);
             bytesSent += chunkBuffer.byteLength;
           }
 
