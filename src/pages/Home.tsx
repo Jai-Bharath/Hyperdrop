@@ -212,7 +212,10 @@ export default function Home() {
           </motion.div>
 
           {/* ─── Utility Row: Install App + Browse ── */}
-          <motion.div className="grid grid-cols-2 gap-3" variants={fadeUp}>
+          <motion.div 
+            className={`grid gap-3 ${!pwaInstalled ? 'grid-cols-2' : 'grid-cols-1'}`}
+            variants={fadeUp}
+          >
 
             {/* Install App */}
             {!pwaInstalled && (
@@ -231,23 +234,21 @@ export default function Home() {
               </button>
             )}
 
-            {/* Browse Files — only when server is running */}
-            {serverIp && (
-              <a
-                href={`http://${serverIp}:3001/browse`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-emerald-500/20 px-4 py-3.5 transition-all active:scale-[0.97]"
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/12">
-                  <ArrowUpRight className="h-4.5 w-4.5 text-emerald-400" />
-                </div>
-                <div className="text-left min-w-0">
-                  <p className="text-[11px] font-bold text-slate-300 leading-tight">Browse Files</p>
-                  <p className="text-[9px] text-slate-600 leading-tight">Saved downloads</p>
-                </div>
-              </a>
-            )}
+            {/* Browse Files */}
+            <a
+              href={serverIp ? `http://${serverIp}:3001/browse` : 'http://localhost:3001/browse'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-emerald-500/20 px-4 py-3.5 transition-all active:scale-[0.97]"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/12">
+                <ArrowUpRight className="h-4.5 w-4.5 text-emerald-400" />
+              </div>
+              <div className="text-left min-w-0">
+                <p className="text-[11px] font-bold text-slate-300 leading-tight">Browse Files</p>
+                <p className="text-[9px] text-slate-600 leading-tight">Saved downloads</p>
+              </div>
+            </a>
           </motion.div>
 
         </div>
