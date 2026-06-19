@@ -36,6 +36,8 @@ export interface Transfer {
   error?: string;
   chunks: ChunkProgress;
   targetDeviceId?: string;
+  relativePath?: string;
+  blobUrl?: string;
 }
 
 export interface HistoryEntry {

@@ -1,14 +1,91 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, CheckCircle2, Loader2, FileText, Zap } from 'lucide-react';
+import { Upload, CheckCircle2, Loader2, FileText, Zap, FolderOpen } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { useStore } from '../store/useStore';
 
 type DropState = 'idle' | 'hovering' | 'sending' | 'success';
 
+/**
+ * Recursively read all files from a dropped folder using FileSystemEntry API.
+ */
+async function readEntriesRecursively(entry: FileSystemDirectoryEntry): Promise<File[]> {
+  const files: File[] = [];
+  const reader = entry.createReader();
+
+  const readBatch = (): Promise<FileSystemEntry[]> => {
+    return new Promise((resolve, reject) => {
+      reader.readEntries(resolve, reject);
+    });
+  };
+
+  // readEntries may not return all entries in one call
+  let entries: FileSystemEntry[] = [];
+  let batch: FileSystemEntry[];
+  do {
+    batch = await readBatch();
+    entries = entries.concat(batch);
+  } while (batch.length > 0);
+
+  for (const child of entries) {
+    if (child.isFile) {
+      const file = await new Promise<File>((resolve, reject) => {
+        (child as FileSystemFileEntry).file(resolve, reject);
+      });
+      // Preserve relative path using a custom property
+      Object.defineProperty(file, 'webkitRelativePath', {
+        value: child.fullPath.replace(/^\//, ''),
+        writable: false,
+        enumerable: true,
+      });
+      files.push(file);
+    } else if (child.isDirectory) {
+      const subFiles = await readEntriesRecursively(child as FileSystemDirectoryEntry);
+      files.push(...subFiles);
+    }
+  }
+
+  return files;
+}
+
+/**
+ * Handle a drop event that might contain folders.
+ * Uses DataTransferItem.webkitGetAsEntry() to detect folders.
+ */
+async function handleDropWithFolders(acceptedFiles: File[], event?: React.DragEvent): Promise<File[]> {
+  // If we don't have the drag event, just return the files as-is
+  if (!event?.dataTransfer?.items) return acceptedFiles;
+
+  const items = event.dataTransfer.items;
+  const allFiles: File[] = [];
+  let hasFolder = false;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.kind !== 'file') continue;
+
+    const entry = item.webkitGetAsEntry?.();
+    if (entry?.isDirectory) {
+      hasFolder = true;
+      const folderFiles = await readEntriesRecursively(entry as FileSystemDirectoryEntry);
+      allFiles.push(...folderFiles);
+    } else if (entry?.isFile) {
+      const file = await new Promise<File>((resolve, reject) => {
+        (entry as FileSystemFileEntry).file(resolve, reject);
+      });
+      allFiles.push(file);
+    }
+  }
+
+  // If no folders detected, use react-dropzone's files (already processed)
+  if (!hasFolder) return acceptedFiles;
+  return allFiles;
+}
+
 export default function DropZone() {
   const [dropState, setDropState] = useState<DropState>('idle');
+  const [lastDragEvent, setLastDragEvent] = useState<React.DragEvent | null>(null);
   const navigate = useNavigate();
   const devices = useStore((s) => s.devices);
   const selectedDevice = useStore((s) => s.selectedDevice);
@@ -18,12 +95,18 @@ export default function DropZone() {
   const activeTransfer = transfers.find(t => t.status === 'transferring');
   const hasPeer = devices.length > 0;
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
+    // Process folders if any
+    const processedFiles = lastDragEvent
+      ? await handleDropWithFolders(acceptedFiles, lastDragEvent)
+      : acceptedFiles;
+
+    if (processedFiles.length === 0) return;
+
     if (!hasPeer) {
-      // No device connected — navigate to send page with files pre-loaded
-      setSelectedFiles(acceptedFiles);
+      setSelectedFiles(processedFiles);
       navigate('/send');
       return;
     }
@@ -33,16 +116,14 @@ export default function DropZone() {
       selectDevice(devices[0]);
     }
 
-    // Set files and go to send
-    setSelectedFiles(acceptedFiles);
+    setSelectedFiles(processedFiles);
     setDropState('sending');
 
-    // Navigate to send page to complete transfer
     setTimeout(() => {
       navigate('/send');
       setDropState('idle');
     }, 500);
-  }, [hasPeer, selectedDevice, devices, selectDevice, setSelectedFiles, navigate]);
+  }, [hasPeer, selectedDevice, devices, selectDevice, setSelectedFiles, navigate, lastDragEvent]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -51,12 +132,22 @@ export default function DropZone() {
     onDragLeave: () => setDropState('idle'),
   });
 
+  // Intercept the native drop event to capture DataTransferItems (for folder detection)
+  const handleNativeDrop = useCallback((e: React.DragEvent) => {
+    setLastDragEvent(e);
+  }, []);
+
   const currentState = isDragActive ? 'hovering' : dropState;
 
   return (
     <motion.div variants={{ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } }}>
       <div
         {...getRootProps()}
+        onDrop={(e) => {
+          handleNativeDrop(e);
+          // Let react-dropzone's onDrop handler also fire
+          getRootProps().onDrop?.(e as any);
+        }}
         className={`relative overflow-hidden rounded-3xl cursor-pointer transition-all duration-500 group ${
           currentState === 'hovering'
             ? 'ring-2 ring-brand-400/50 shadow-[0_0_40px_rgba(99,102,241,0.2)]'
@@ -142,10 +233,10 @@ export default function DropZone() {
                 className="flex flex-col items-center gap-3"
               >
                 <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                  <FileText className="h-10 w-10 text-brand-400" />
+                  <FolderOpen className="h-10 w-10 text-brand-400" />
                 </motion.div>
                 <div>
-                  <p className="text-sm font-bold text-brand-300">Drop to Send Instantly</p>
+                  <p className="text-sm font-bold text-brand-300">Drop Files or Folders</p>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     {hasPeer ? `To ${devices[0]?.name || 'paired device'}` : 'Select device on Send page'}
                   </p>

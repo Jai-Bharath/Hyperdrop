@@ -2,17 +2,32 @@ import { useCallback } from 'react';
 import { useStore, type Device, type Protocol } from '../store/useStore';
 import { getSharedSocket } from './useSocket';
 import { uploadFileParallel } from '../engine/parallelChunkUploader';
+import { WebRTCTransfer } from '../engine/webrtcEngine';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
-// Global map to hold AbortControllers for active transfers
+// ═════════════════════════════════════════════════════════════════
+//  GLOBAL MAPS
+// ═════════════════════════════════════════════════════════════════
+
+/** Abort controllers for active HTTP-based transfers */
 const abortControllers = new Map<string, AbortController>();
 
-// Global map to hold Files for transfers prior to receiver acceptance
+/** Files waiting for receiver acceptance */
 const pendingUploadFiles = new Map<string, File>();
 
-// Helper to generate UUIDs in both secure and insecure contexts (HTTP LAN)
+/** Active WebRTC transfer instances (for cancel/cleanup) */
+const activeWebRTCTransfers = new Map<string, WebRTCTransfer>();
+
+// Make WebRTC map available to useSocket for signaling relay
+(window as any).__hyperdrop_webrtc_transfers = activeWebRTCTransfers;
+
+// ═════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═════════════════════════════════════════════════════════════════
+
+/** Generate UUIDs in both secure and insecure contexts (HTTP LAN) */
 function generateUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -22,15 +37,6 @@ function generateUUID(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
-
-export function cancelPendingUpload(id: string) {
-  pendingUploadFiles.delete(id);
-  const controller = abortControllers.get(id);
-  if (controller) {
-    controller.abort();
-    abortControllers.delete(id);
-  }
 }
 
 /** Check if a URL or IP is a private/local address (LAN — not cloud) */
@@ -46,11 +52,89 @@ function isLanAddress(urlOrIp: string): boolean {
 }
 
 /**
+ * Probe whether a local LAN HyperDrop server is reachable.
+ * Returns the base URL if found, or null if not.
+ */
+async function probeLocalServer(): Promise<string | null> {
+  const storeApiBase = useStore.getState().apiBaseUrl || '';
+  const serverIp = useStore.getState().serverIp;
+
+  // Check explicit LAN server IP
+  if (serverIp && isLanAddress(serverIp)) {
+    const url = `http://${serverIp}:${useStore.getState().serverPort || 3001}`;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(`${url}/api/info`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) return url;
+    } catch {
+      // Not reachable
+    }
+  }
+
+  // Check if apiBaseUrl is LAN
+  if (storeApiBase && isLanAddress(storeApiBase)) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const res = await fetch(`${storeApiBase}/api/info`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) return storeApiBase;
+    } catch {
+      // Not reachable
+    }
+  }
+
+  // Check localhost (dev mode)
+  if (storeApiBase.includes('localhost') || storeApiBase.includes('127.0.0.1')) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1000);
+      const res = await fetch(`${storeApiBase}/api/info`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) return storeApiBase;
+    } catch {
+      // Not reachable
+    }
+  }
+
+  return null;
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  CANCEL
+// ═════════════════════════════════════════════════════════════════
+
+export function cancelPendingUpload(id: string) {
+  pendingUploadFiles.delete(id);
+
+  // Cancel HTTP upload
+  const controller = abortControllers.get(id);
+  if (controller) {
+    controller.abort();
+    abortControllers.delete(id);
+  }
+
+  // Cancel WebRTC transfer
+  const rtc = activeWebRTCTransfers.get(id);
+  if (rtc) {
+    rtc.close();
+    activeWebRTCTransfers.delete(id);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  ACCEPTED TRANSFER HANDLER
+// ═════════════════════════════════════════════════════════════════
+
+/**
  * Run by the sender once the receiver accepts the transfer.
- * Triggers the actual high-speed upload.
- * 
- * IMPORTANT: The server emits transfer:done when all chunks are received.
- * The sender should NOT emit transfer:done — that causes double-done on receiver.
+ *
+ * Decision logic:
+ *  1. If a local LAN server is reachable → use parallel HTTP (fastest on LAN)
+ *  2. Otherwise → ALWAYS use WebRTC P2P (direct browser-to-browser)
+ *  3. NEVER route file data through the cloud/Render server
  */
 export async function handleAcceptedTransfer(id: string, _socket: any) {
   const file = pendingUploadFiles.get(id);
@@ -59,152 +143,149 @@ export async function handleAcceptedTransfer(id: string, _socket: any) {
     return;
   }
 
-  // ── Resolve the file-transfer URL (MUST be local/LAN — never cloud) ──
-  const storeApiBase = useStore.getState().apiBaseUrl || '';
-  const serverIp = useStore.getState().serverIp;
+  // Get the transfer to find targetDeviceId
+  const transfer = useStore.getState().transfers.find(t => t.id === id);
+  const targetDeviceId = transfer?.targetDeviceId || '';
 
-  let fileTransferUrl: string;
+  // ── Try LAN server first (only if local server is actually reachable) ──
+  const localServerUrl = await probeLocalServer();
 
-  if (serverIp && isLanAddress(serverIp)) {
-    // Best case: we know the LAN IP from server info
-    fileTransferUrl = `http://${serverIp}:${useStore.getState().serverPort || 3001}`;
-  } else if (storeApiBase && isLanAddress(storeApiBase)) {
-    // apiBaseUrl already points to LAN
-    fileTransferUrl = storeApiBase;
-  } else if (storeApiBase.includes('localhost') || storeApiBase.includes('127.0.0.1')) {
-    // Local dev
-    fileTransferUrl = storeApiBase;
-  } else {
-    // No local server — use WebRTC for browser-to-browser P2P transfer
-    console.log('[useTransfer] No local server found — using WebRTC P2P transfer');
-    useStore.getState().updateTransfer(id, { status: 'transferring', protocol: 'webrtc' });
+  if (localServerUrl) {
+    console.log(`[useTransfer] Local server found at ${localServerUrl} — using parallel HTTP`);
+    useStore.getState().updateTransfer(id, { status: 'transferring', protocol: 'parallel-http' });
 
-    const socket = getSharedSocket();
-    if (!socket) {
-      useStore.getState().updateTransfer(id, {
-        status: 'error',
-        error: 'Not connected to signaling server',
-      });
-      return;
-    }
+    const controller = new AbortController();
+    abortControllers.set(id, controller);
 
     try {
-      const { WebRTCTransfer } = await import('../engine/webrtcEngine');
-      const transfer = useStore.getState().transfers.find(t => t.id === id);
-      const targetDeviceId = transfer ? (transfer as any).targetDeviceId : '';
-
-      const rtc = new WebRTCTransfer(socket, targetDeviceId || '');
-      
-      // Store in global map so useSocket can relay answer/ice to it
-      const webrtcMap = (window as any).__hyperdrop_webrtc_transfers as Map<string, any> | undefined;
-      if (webrtcMap) webrtcMap.set(id, rtc);
-
-      // Set up send callbacks
-      rtc.sendFile(
+      await uploadFileParallel({
         file,
-        (bytesSent, speed) => {
+        baseUrl: localServerUrl,
+        transferId: id,
+        onProgress: (progress) => {
           useStore.getState().updateTransfer(id, {
-            transferred: bytesSent,
-            speed,
+            transferred: progress.transferred,
+            speed: progress.speed,
             status: 'transferring',
+            chunks: {
+              total: progress.chunksTotal,
+              done: progress.chunksCompleted,
+              failed: [],
+            },
           });
-          // Relay progress to receiver
-          socket.emit('transfer:progress', { id, transferred: bytesSent, speed });
+          const socket = getSharedSocket();
+          if (socket) {
+            socket.emit('transfer:progress', {
+              id,
+              transferred: progress.transferred,
+              speed: progress.speed,
+            });
+          }
         },
-        () => {
+        onComplete: () => {
           useStore.getState().updateTransfer(id, { status: 'done', transferred: file.size });
+          abortControllers.delete(id);
           pendingUploadFiles.delete(id);
-          socket.emit('transfer:done', { id });
-          webrtcMap?.delete(id);
-          console.log(`[useTransfer] WebRTC P2P upload complete for ${id}`);
+          console.log(`[useTransfer] HTTP upload complete for ${id}`);
         },
-        (error) => {
+        onError: (error) => {
           useStore.getState().updateTransfer(id, { status: 'error', error: error.message });
-          socket.emit('transfer:error', { id, error: error.message });
-          webrtcMap?.delete(id);
+          const socket = getSharedSocket();
+          if (socket) {
+            socket.emit('transfer:error', { id, error: error.message });
+          }
+          abortControllers.delete(id);
         },
-      );
-
-      // Create and send offer
-      await rtc.createOffer(targetDeviceId || '');
-    } catch (err) {
-      console.error('[useTransfer] WebRTC transfer failed:', err);
-      useStore.getState().updateTransfer(id, {
-        status: 'error',
-        error: err instanceof Error ? err.message : 'WebRTC transfer failed',
+        signal: controller.signal,
       });
+    } catch (err) {
+      console.error('[useTransfer] HTTP transfer error:', err);
+      abortControllers.delete(id);
     }
     return;
   }
 
-  const controller = new AbortController();
-  abortControllers.set(id, controller);
+  // ── No local server → WebRTC P2P (ALWAYS — never cloud relay) ──
+  console.log('[useTransfer] No local server — using WebRTC P2P transfer');
+  useStore.getState().updateTransfer(id, { status: 'transferring', protocol: 'webrtc' });
 
-  useStore.getState().updateTransfer(id, { status: 'transferring' });
+  const socket = getSharedSocket();
+  if (!socket) {
+    useStore.getState().updateTransfer(id, {
+      status: 'error',
+      error: 'Not connected to signaling server',
+    });
+    return;
+  }
+
+  if (!targetDeviceId) {
+    useStore.getState().updateTransfer(id, {
+      status: 'error',
+      error: 'No target device ID — cannot establish WebRTC connection',
+    });
+    return;
+  }
 
   try {
-    await uploadFileParallel({
+    const rtc = new WebRTCTransfer(socket, targetDeviceId);
+    activeWebRTCTransfers.set(id, rtc);
+
+    const relativePath = (file as any).webkitRelativePath || transfer?.relativePath || undefined;
+
+    // Set up send callbacks
+    rtc.sendFile(
       file,
-      baseUrl: fileTransferUrl,
-      transferId: id,
-      onProgress: (progress) => {
+      (bytesSent, speed) => {
         useStore.getState().updateTransfer(id, {
-          transferred: progress.transferred,
-          speed: progress.speed,
+          transferred: bytesSent,
+          speed,
           status: 'transferring',
-          chunks: {
-            total: progress.chunksTotal,
-            done: progress.chunksCompleted,
-            failed: [],
-          },
         });
-        // Relay progress to the peer via Socket.IO so the receiver sees progress
-        const socket = getSharedSocket();
-        if (socket) {
-          socket.emit('transfer:progress', {
-            id,
-            transferred: progress.transferred,
-            speed: progress.speed,
-          });
-        }
+        // Relay progress to receiver via signaling
+        socket.emit('transfer:progress', { id, transferred: bytesSent, speed });
       },
-      onComplete: () => {
-        // Mark sender's own UI as done
+      () => {
         useStore.getState().updateTransfer(id, { status: 'done', transferred: file.size });
-        abortControllers.delete(id);
         pendingUploadFiles.delete(id);
-        console.log(`[useTransfer] Upload complete for ${id}, server will emit transfer:done`);
+        activeWebRTCTransfers.delete(id);
+        socket.emit('transfer:done', { id });
+        console.log(`[useTransfer] WebRTC P2P upload complete for ${id}`);
       },
-      onError: (error) => {
+      (error) => {
+        if (rtc.isClosed) return; // Intentional cancel — don't error
         useStore.getState().updateTransfer(id, { status: 'error', error: error.message });
-        const socket = getSharedSocket();
-        if (socket) {
-          socket.emit('transfer:error', { id, error: error.message });
-        }
-        abortControllers.delete(id);
+        socket.emit('transfer:error', { id, error: error.message });
+        activeWebRTCTransfers.delete(id);
       },
-      signal: controller.signal,
-    });
+      { relativePath },
+    );
+
+    // Create and send WebRTC offer
+    await rtc.createOffer(targetDeviceId);
   } catch (err) {
-    console.error('[useTransfer] Transfer run error:', err);
-    abortControllers.delete(id);
+    console.error('[useTransfer] WebRTC transfer failed:', err);
+    useStore.getState().updateTransfer(id, {
+      status: 'error',
+      error: err instanceof Error ? err.message : 'WebRTC transfer failed',
+    });
+    activeWebRTCTransfers.delete(id);
   }
 }
 
+// ═════════════════════════════════════════════════════════════════
+//  RETRY
+// ═════════════════════════════════════════════════════════════════
+
 /**
  * Retry a failed, errored, or cancelled transfer.
- * Sender-side: re-runs the upload engine which auto-resumes via /api/resume/:id.
- * Receiver-side: re-emits transfer:accept so the sender restarts, OR tries direct download.
  */
 export function retryTransfer(id: string) {
   const transfer = useStore.getState().transfers.find(t => t.id === id);
   if (!transfer) return;
 
   if (transfer.direction === 'send') {
-    // The file may still be in pendingUploadFiles if the error was a network issue
     const file = pendingUploadFiles.get(id);
     if (file) {
-      // Reset state and re-run the upload — it will auto-resume from last checkpoint
       useStore.getState().updateTransfer(id, {
         status: 'transferring',
         error: undefined,
@@ -212,38 +293,34 @@ export function retryTransfer(id: string) {
       });
       handleAcceptedTransfer(id, null);
     } else {
-      // File reference lost — remove the failed transfer and reset UI so user can re-pick
+      // File reference lost — remove and reset UI
       useStore.getState().removeTransfer(id);
       useStore.getState().clearSelectedFiles();
       useStore.getState().setActiveTransfer(null);
     }
   } else if (transfer.direction === 'receive') {
-    // Reset state
     useStore.getState().updateTransfer(id, {
       status: 'transferring',
       error: undefined,
       startedAt: Date.now(),
     });
 
-    // Try direct download first — the file may already be on the server
-    triggerFileDownload(transfer.fileName, id)
-      .then(() => {
-        useStore.getState().updateTransfer(id, { status: 'done', transferred: transfer.fileSize });
-      })
-      .catch(() => {
-        // If download fails, re-emit accept so the sender resends
-        const socket = getSharedSocket();
-        if (socket) {
-          socket.emit('transfer:accept', { id });
-        } else {
-          useStore.getState().updateTransfer(id, {
-            status: 'error',
-            error: 'Not connected. Please refresh the page.',
-          });
-        }
+    // For WebRTC transfers, re-emit accept so sender resends
+    const socket = getSharedSocket();
+    if (socket) {
+      socket.emit('transfer:accept', { id });
+    } else {
+      useStore.getState().updateTransfer(id, {
+        status: 'error',
+        error: 'Not connected. Please refresh the page.',
       });
+    }
   }
 }
+
+// ═════════════════════════════════════════════════════════════════
+//  HOOK
+// ═════════════════════════════════════════════════════════════════
 
 /**
  * Hook for managing file transfers.
@@ -255,8 +332,6 @@ export function useTransfer() {
   const updateTransfer = useStore((s) => s.updateTransfer);
   const removeTransfer = useStore((s) => s.removeTransfer);
 
-  const apiBaseUrl = useStore((s) => s.apiBaseUrl) || 'http://127.0.0.1:3001';
-
   const activeTransfer = transfers.find((t) => t.id === activeTransferId) ?? null;
 
   const sendFiles = useCallback(
@@ -267,6 +342,7 @@ export function useTransfer() {
 
       for (const file of files) {
         const id = generateUUID();
+        const relativePath = (file as any).webkitRelativePath || undefined;
 
         addTransfer({
           id,
@@ -280,6 +356,7 @@ export function useTransfer() {
           startedAt: Date.now(),
           chunks: { total: 0, done: 0, failed: [] },
           targetDeviceId: device.id,
+          relativePath,
         });
 
         // Save file for later when receiver accepts
@@ -293,6 +370,7 @@ export function useTransfer() {
             senderId: localStorage.getItem('hyperdrop-device-id'),
             targetId: device.id,
             protocol,
+            relativePath,
           });
         }
       }
@@ -352,6 +430,10 @@ export function useTransfer() {
   };
 }
 
+// ═════════════════════════════════════════════════════════════════
+//  DOWNLOAD TRIGGERS
+// ═════════════════════════════════════════════════════════════════
+
 /**
  * Download a file received via WebRTC (from a Blob URL).
  * No server fetch needed — the file is already in memory.
@@ -375,18 +457,25 @@ export function triggerWebRTCDownload(fileName: string, blobUrl: string): void {
     }, 1000);
 
     // Revoke after a short delay to ensure download starts
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
   } catch (err) {
     console.error('[useTransfer] WebRTC download trigger failed:', err);
   }
 }
 
 /**
- * Download a file from the server.
+ * Download a file from the server (for HTTP-based transfers).
  * On native (Capacitor), saves to Documents.
  * On web, triggers browser download.
  */
 export async function triggerFileDownload(fileName: string, transferId: string): Promise<void> {
+  // Check if this transfer has a blob URL (WebRTC transfer)
+  const transfer = useStore.getState().transfers.find(t => t.id === transferId);
+  if (transfer?.blobUrl) {
+    triggerWebRTCDownload(fileName, transfer.blobUrl);
+    return;
+  }
+
   // Resolve download URL — prefer LAN server
   const storeApiBase = useStore.getState().apiBaseUrl || '';
   const serverIp = useStore.getState().serverIp;

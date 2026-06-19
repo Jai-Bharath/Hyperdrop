@@ -5,6 +5,7 @@
 <br/>
 
 [![Live Demo](https://img.shields.io/badge/🌐%20Live%20Demo-hyperdrop--iota.vercel.app-6d28d9?style=for-the-badge&logoColor=white)](https://hyperdrop-iota.vercel.app/)
+[![Download APK](https://img.shields.io/badge/📱%20Download%20APK-Android-34a853?style=for-the-badge&logo=android&logoColor=white)](https://hyperdrop-iota.vercel.app/hyperdrop.apk)
 [![GitHub Stars](https://img.shields.io/github/stars/Jai-Bharath/Hyperdrop?style=for-the-badge&color=f59e0b&logo=github)](https://github.com/Jai-Bharath/Hyperdrop/stargazers)
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-94.7%25-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -45,6 +46,7 @@ HyperDrop is a **browser-based file transfer app** that sends files **directly b
 | Feature | HyperDrop | AirDrop | Quick Share | SHAREit | LocalSend |
 |---|:---:|:---:|:---:|:---:|:---:|
 | **No app install needed** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Native Android app** | ✅ Capacitor | ❌ | ✅ | ✅ | ✅ |
 | **Works on any device/OS** | ✅ | ❌ Apple only | ❌ Android only | Partial | Partial |
 | **Files never touch a server** | ✅ | ✅ | ✅ | ❌ (ads/telemetry) | ✅ |
 | **Works offline (PWA)** | ✅ | ✅ | ✅ | ❌ | ✅ |
@@ -200,6 +202,13 @@ hyperdrop/
 │   ├── sw.js                        ← Service Worker for offline caching
 │   └── manifest.json                ← PWA manifest
 ├── Dockerfile                       ← production container for Render
+├── capacitor.config.ts              ← Capacitor config (appId, webDir, plugins)
+├── android/                         ← Capacitor Android project
+│   ├── app/build.gradle             ← Android build config
+│   ├── app/src/main/
+│   │   ├── AndroidManifest.xml      ← permissions, activity config
+│   │   └── assets/public/           ← synced web build output
+│   └── variables.gradle             ← SDK version variables
 └── vercel.json                      ← SPA rewrite rules for Vercel
 ```
 
@@ -272,6 +281,60 @@ docker build -t hyperdrop .
 docker run -p 3001:3001 hyperdrop
 ```
 
+### 📱 Build Android APK (via Capacitor)
+
+HyperDrop ships a native Android app built with **Capacitor 6**. The same React codebase is bundled into a WebView-based Android app with native filesystem, network, and share APIs.
+
+#### Prerequisites
+
+- **Node.js** ≥ 18
+- **Java JDK** 17 or 21
+- **Android SDK** (API 34) — install via [Android Studio](https://developer.android.com/studio) or the [Android CLI](https://developer.android.com/tools)
+
+#### Build Steps
+
+```bash
+# 1. Build the web app
+npm run build
+
+# 2. Sync web assets into the Android project
+npx cap sync android
+
+# 3. Build a debug APK
+cd android
+./gradlew assembleDebug
+```
+
+The generated APK will be at:
+```
+android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+#### Build a Release APK
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+> **Note:** Release builds require a signing keystore. See the [Android signing guide](https://developer.android.com/studio/publish/app-signing) for setup.
+
+#### Install on Device
+
+```bash
+# Via ADB (USB debugging enabled)
+adb install android/app/build/outputs/apk/debug/app-debug.apk
+
+# Or download from the Install App button on the home page
+# which offers both PWA install and APK download options
+```
+
+#### Open in Android Studio
+
+```bash
+npx cap open android
+```
+
 ---
 
 ## 🗺️ Roadmap
@@ -286,7 +349,8 @@ docker run -p 3001:3001 hyperdrop
 - [x] Background transfer protection (Web Locks + AudioContext)
 - [x] Page reload warning during active transfers
 - [x] PWA + Service Worker offline support
-- [x] Capacitor Android packaging
+- [x] Capacitor Android packaging (APK build)
+- [x] In-app Install button (PWA + APK download)
 - [ ] Transfer history with speed analytics
 - [ ] iOS native support
 - [ ] Multi-file batch transfer progress

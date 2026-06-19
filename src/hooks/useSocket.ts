@@ -16,7 +16,6 @@ const DEVICE_ID_KEY = 'hyperdrop-device-id';
 
 /**
  * Check if a URL or IP string contains a private/LAN IP address.
- * Used to detect if a device is on the same local network.
  */
 function isPrivateIp(urlOrIp: string): boolean {
   const stripped = urlOrIp.replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
@@ -132,11 +131,8 @@ export function useSocket(): Socket | null {
                          /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
 
       if (isCapacitor || !isLocalDev) {
-        // Native mobile app OR cloud-hosted frontend (Vercel/Netlify/etc.)
-        // → connect to the dedicated Cloud backend on Render
         targetUrl = CLOUD_SIGNAL_URL;
       } else {
-        // Local dev / LAN — connects to its own origin (proxied or direct)
         targetUrl = origin;
       }
     }
@@ -159,7 +155,6 @@ export function useSocket(): Socket | null {
       setConnected(true);
       console.log(`[useSocket] Connected! Socket ID: ${socket.id}`);
       
-      // Load server configuration if connected to a local HyperDrop backend
       const isLocalhostOrLAN = targetUrl.includes('localhost') || 
                                targetUrl.includes('127.0.0.1') || 
                                /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(targetUrl.replace(/^https?:\/\//, ''));
@@ -180,11 +175,9 @@ export function useSocket(): Socket | null {
             useStore.getState().setApiBaseUrl(targetUrl);
           });
       } else {
-        // Cloud signaling server — file data should still go over LAN if possible!
-        // Set cloud URL as fallback, but we'll attempt LAN discovery below.
         useStore.getState().setServerInfo('', 3001, 2121);
         useStore.getState().setApiBaseUrl(targetUrl);
-        console.log(`[useSocket] Cloud signaling connected. Will probe LAN for direct file transfer.`);
+        console.log(`[useSocket] Cloud signaling connected. WebRTC P2P will handle file data.`);
       }
 
       // Register device identification
@@ -196,7 +189,7 @@ export function useSocket(): Socket | null {
         port: window.location.port ? parseInt(window.location.port, 10) : 80
       });
 
-      // If we have an active pairing Room ID parameter in URL or localStorage, auto-rejoin
+      // Auto-rejoin pairing room
       const urlParams = new URLSearchParams(window.location.search);
       let room = urlParams.get('room');
       if (!room) {
@@ -233,10 +226,6 @@ export function useSocket(): Socket | null {
         if (device.id !== deviceIdRef.current) {
           addDevice(device);
 
-          // ── LAN Auto-Discovery for Cloud Connections ──
-          // When using the hosted website but on the same WiFi, probe the device's
-          // LAN IP for a local HyperDrop server. If reachable, route file data
-          // directly over WiFi instead of through the cloud. (QuickShare/AirDrop pattern)
           const currentApiBase = useStore.getState().apiBaseUrl;
           const isCurrentlyUsingCloud = currentApiBase && !isPrivateIp(currentApiBase);
           const deviceHasPrivateIp = device.ip && isPrivateIp(device.ip);
@@ -244,7 +233,7 @@ export function useSocket(): Socket | null {
           if (isCurrentlyUsingCloud && deviceHasPrivateIp) {
             const lanUrl = `http://${device.ip}:3001`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
 
             fetch(`${lanUrl}/api/info`, { signal: controller.signal })
               .then((res) => {
@@ -260,7 +249,7 @@ export function useSocket(): Socket | null {
               })
               .catch(() => {
                 clearTimeout(timeoutId);
-                // LAN not reachable — keep using cloud (this is fine)
+                // LAN not reachable — WebRTC P2P will be used instead
               });
           }
         }
@@ -284,6 +273,7 @@ export function useSocket(): Socket | null {
       fileSize: number;
       protocol: string;
       senderId?: string;
+      relativePath?: string;
     }) => {
       try {
         addTransfer({
@@ -297,7 +287,8 @@ export function useSocket(): Socket | null {
           status: 'pending',
           startedAt: Date.now(),
           chunks: { total: 0, done: 0, failed: [] },
-          targetDeviceId: transfer.senderId, // Store sender's ID for WebRTC
+          targetDeviceId: transfer.senderId,
+          relativePath: transfer.relativePath,
         });
       } catch {
         // Malformed payload
@@ -312,7 +303,7 @@ export function useSocket(): Socket | null {
       }
     });
 
-    // Track pending auto-completion timers (safety net for 100% stuck)
+    // Track pending auto-completion timers
     const pendingCompletionTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
     socket.on('transfer:progress', (payload: {
@@ -323,15 +314,13 @@ export function useSocket(): Socket | null {
       try {
         const transfers = useStore.getState().transfers;
         const transfer = transfers.find((t) => t.id === payload.id);
-        // Only update if still transferring — don't overwrite 'done' status
         if (transfer && transfer.status === 'transferring') {
           updateTransfer(payload.id, {
             transferred: payload.transferred,
             speed: payload.speed,
           });
 
-          // Safety net: if receiver sees ~100% progress but transfer:done hasn't fired,
-          // auto-complete after 5 seconds to prevent getting stuck
+          // Safety net: auto-complete if stuck at ~100%
           if (
             transfer.direction === 'receive' &&
             transfer.fileSize > 0 &&
@@ -343,10 +332,13 @@ export function useSocket(): Socket | null {
               pendingCompletionTimers.delete(payload.id);
               const currentTransfer = useStore.getState().transfers.find((t) => t.id === payload.id);
               if (currentTransfer && currentTransfer.status === 'transferring' && !downloadedTransfers.has(payload.id)) {
-                console.log(`[useSocket] Safety net: auto-completing transfer ${payload.id} (stuck at 100%)`);
+                console.log(`[useSocket] Safety net: auto-completing transfer ${payload.id}`);
                 downloadedTransfers.add(payload.id);
                 updateTransfer(payload.id, { status: 'done', transferred: currentTransfer.fileSize });
-                triggerFileDownload(currentTransfer.fileName, payload.id);
+                // Only trigger HTTP download if this isn't a WebRTC transfer
+                if (currentTransfer.protocol !== 'webrtc') {
+                  triggerFileDownload(currentTransfer.fileName, payload.id);
+                }
                 const duration = Math.max(1, (Date.now() - currentTransfer.startedAt) / 1000);
                 useStore.getState().addHistoryEntry({
                   id: currentTransfer.id, fileName: currentTransfer.fileName, fileSize: currentTransfer.fileSize,
@@ -364,30 +356,28 @@ export function useSocket(): Socket | null {
       }
     });
 
-    // Track which transfers have already triggered downloads (prevents double-download)
+    // Track which transfers have already triggered downloads
     const downloadedTransfers = new Set<string>();
 
     socket.on('transfer:done', (payload: { id: string; fileName?: string; fileSize?: number; downloadUrl?: string }) => {
       try {
-        // Clear any safety-net auto-completion timer
         const pendingTimer = pendingCompletionTimers.get(payload.id);
         if (pendingTimer) {
           clearTimeout(pendingTimer);
           pendingCompletionTimers.delete(payload.id);
         }
 
-        // Deduplicate — server broadcasts io.emit + socket relay can both arrive
         if (downloadedTransfers.has(payload.id)) return;
 
         const transfers = useStore.getState().transfers;
         const transfer = transfers.find((t) => t.id === payload.id);
         
         if (transfer) {
-          // Update transfer status to done BEFORE triggering download to avoid race conditions with beforeunload listener
           updateTransfer(payload.id, { status: 'done', transferred: payload.fileSize || transfer.fileSize || 0 });
 
-          // Only trigger download if we are the RECEIVER
-          if (transfer.direction === 'receive' && transfer.status !== 'done') {
+          // Only trigger download if we are the RECEIVER and it's NOT a WebRTC transfer
+          // (WebRTC downloads are handled by the receiveFile callback directly)
+          if (transfer.direction === 'receive' && transfer.status !== 'done' && transfer.protocol !== 'webrtc') {
             downloadedTransfers.add(payload.id);
             const fileName = payload.fileName || transfer.fileName;
             triggerFileDownload(fileName, payload.id);
@@ -409,7 +399,6 @@ export function useSocket(): Socket | null {
           updateTransfer(payload.id, { status: 'done', transferred: payload.fileSize || 0 });
         }
 
-        // Clean up after 60s to prevent memory leak
         setTimeout(() => downloadedTransfers.delete(payload.id), 60000);
       } catch (err) {
         console.error('[useSocket] Error handling transfer:done:', err);
@@ -440,24 +429,52 @@ export function useSocket(): Socket | null {
     });
 
     // ── WebRTC Signaling Events ──────────────────────────────
-    const webrtcTransfers = new Map<string, WebRTCTransfer>();
-    (window as any).__hyperdrop_webrtc_transfers = webrtcTransfers;
+    // Use the global map from useTransfer so both sender and receiver can be tracked
+    const webrtcTransfers = (window as any).__hyperdrop_webrtc_transfers as Map<string, WebRTCTransfer>;
 
     socket.on('webrtc:offer', (payload: { fromId: string; offer: RTCSessionDescriptionInit }) => {
       try {
         console.log('[useSocket] WebRTC offer received from:', payload.fromId);
         const transfers = useStore.getState().transfers;
-        const transfer = transfers.find(
-          (t) => t.direction === 'receive' && t.status === 'transferring'
+        
+        // Find the correct transfer for this WebRTC offer:
+        // 1. Match by targetDeviceId (sender's device ID) — most specific
+        // 2. Fall back to any receiving + transferring/pending transfer
+        let transfer = transfers.find(
+          (t) => t.direction === 'receive' &&
+                 (t.status === 'transferring' || t.status === 'pending') &&
+                 t.targetDeviceId === payload.fromId
         );
-        if (!transfer) return;
+        
+        if (!transfer) {
+          // Broader match: any receive transfer that's in progress
+          transfer = transfers.find(
+            (t) => t.direction === 'receive' &&
+                   (t.status === 'transferring' || t.status === 'pending')
+          );
+        }
+        
+        if (!transfer) {
+          console.warn('[useSocket] No matching receive transfer for WebRTC offer from:', payload.fromId);
+          return;
+        }
+
+        console.log(`[useSocket] Matched WebRTC offer to transfer: ${transfer.id} (${transfer.fileName})`);
+
+        // Update transfer status to transferring with webrtc protocol
+        updateTransfer(transfer.id, { status: 'transferring', protocol: 'webrtc' });
 
         const rtc = new WebRTCTransfer(socket, payload.fromId);
         webrtcTransfers.set(transfer.id, rtc);
 
+        const transferId = transfer.id;
+        const transferFileName = transfer.fileName;
+        const transferFileSize = transfer.fileSize;
+        const transferStartedAt = transfer.startedAt;
+
         rtc.receiveFile(
           (bytesReceived, speed) => {
-            updateTransfer(transfer.id, {
+            updateTransfer(transferId, {
               transferred: bytesReceived,
               speed,
               status: 'transferring',
@@ -465,26 +482,46 @@ export function useSocket(): Socket | null {
             });
           },
           (downloadUrl) => {
-            updateTransfer(transfer.id, { status: 'done', transferred: transfer.fileSize });
-            triggerWebRTCDownload(transfer.fileName, downloadUrl!);
-            const duration = Math.max(1, (Date.now() - transfer.startedAt) / 1000);
+            // Store blob URL in transfer state for later download
+            updateTransfer(transferId, {
+              status: 'done',
+              transferred: transferFileSize,
+              blobUrl: downloadUrl || undefined,
+            });
+            
+            // Auto-trigger download
+            if (downloadUrl) {
+              triggerWebRTCDownload(transferFileName, downloadUrl);
+            }
+            
+            const duration = Math.max(1, (Date.now() - transferStartedAt) / 1000);
             useStore.getState().addHistoryEntry({
-              id: transfer.id, fileName: transfer.fileName, fileSize: transfer.fileSize,
+              id: transferId, fileName: transferFileName, fileSize: transferFileSize,
               protocol: 'webrtc', direction: 'receive',
-              speed: transfer.fileSize / duration, duration,
+              speed: transferFileSize / duration, duration,
               completedAt: Date.now(), deviceName: 'Sender',
             });
-            webrtcTransfers.delete(transfer.id);
+            webrtcTransfers.delete(transferId);
+            console.log(`[useSocket] WebRTC receive complete: ${transferFileName}`);
           },
           (error) => {
-            updateTransfer(transfer.id, { status: 'error', error: error.message });
-            webrtcTransfers.delete(transfer.id);
+            if (rtc.isClosed) return; // Intentional cancel
+            updateTransfer(transferId, { status: 'error', error: error.message });
+            webrtcTransfers.delete(transferId);
+          },
+          (metadata) => {
+            // Update transfer with actual file metadata from sender
+            console.log(`[useSocket] WebRTC metadata received:`, metadata);
+            updateTransfer(transferId, {
+              relativePath: metadata.relativePath,
+            });
           },
         );
 
         rtc.handleOffer(payload.offer, payload.fromId).catch((err) => {
           console.error('[useSocket] WebRTC offer handling failed:', err);
-          updateTransfer(transfer.id, { status: 'error', error: 'WebRTC connection failed' });
+          updateTransfer(transferId, { status: 'error', error: 'WebRTC connection failed' });
+          webrtcTransfers.delete(transferId);
         });
       } catch (err) {
         console.error('[useSocket] Error handling webrtc:offer:', err);
@@ -516,7 +553,7 @@ export function useSocket(): Socket | null {
       } catch { /* ignore */ }
     });
 
-    // ── Peer Disconnect Alert (Immediate notification) ──
+    // ── Peer Disconnect Alert ──
     socket.on('peer:disconnected', (payload: {
       deviceId: string;
       deviceName: string;
@@ -530,18 +567,15 @@ export function useSocket(): Socket | null {
         const transfer = transfers.find((t) => t.id === payload.transferId);
         
         if (transfer && (transfer.status === 'transferring' || transfer.status === 'pending')) {
-          // Abort the upload if we are the sender
           if (transfer.direction === 'send') {
             cancelPendingUpload(payload.transferId);
           }
           
-          // Mark transfer as errored
           updateTransfer(payload.transferId, {
             status: 'error',
             error: `${payload.deviceName} disconnected`,
           });
           
-          // Show prominent disconnect alert
           useStore.getState().showDisconnectAlert({
             deviceName: payload.deviceName,
             transferId: payload.transferId,
@@ -556,7 +590,6 @@ export function useSocket(): Socket | null {
     // ── Chat & Clipboard Events ──────────────────────────────
     let peerTypingTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // Client-side dedup for chat/clipboard (safety net)
     const recentEventIds = new Set<string>();
     function isNewEvent(id: string): boolean {
       if (recentEventIds.has(id)) return false;
@@ -574,7 +607,6 @@ export function useSocket(): Socket | null {
       isCode: boolean;
     }) => {
       try {
-        // Deduplicate
         if (!isNewEvent(data.id)) return;
 
         const message: ChatMessageData = {
@@ -583,7 +615,6 @@ export function useSocket(): Socket | null {
         };
         useStore.getState().addChatMessage(message);
         
-        // Send read receipt if chat is currently open
         if (useStore.getState().chatOpen) {
           socket.emit('chat:read', { messageId: data.id, readerId: deviceIdRef.current });
         }
@@ -620,7 +651,6 @@ export function useSocket(): Socket | null {
       isCode: boolean;
     }) => {
       try {
-        // Deduplicate
         if (!isNewEvent(data.id)) return;
 
         const entry: ClipboardEntryData = {
@@ -629,7 +659,6 @@ export function useSocket(): Socket | null {
         };
         useStore.getState().addClipboardEntry(entry);
         
-        // Auto-copy to clipboard if sync is enabled
         if (useStore.getState().clipboardSyncEnabled) {
           navigator.clipboard.writeText(data.content).catch(() => {});
         }

@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Send, Download, Wifi, Monitor, Zap, Smartphone,
+  Send, Download, Wifi, Monitor, Zap,
   ChevronRight, Check, ArrowUpRight
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
@@ -10,6 +10,7 @@ import { useDiscovery } from '../hooks/useDiscovery';
 import DeviceRadar from '../components/DeviceRadar';
 import DropZone from '../components/DropZone';
 import WifiDirectModal from '../components/WifiDirectModal';
+import InstallAppButton from '../components/InstallAppButton';
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
@@ -24,12 +25,7 @@ export default function Home() {
   const serverIp = useStore((s) => s.serverIp);
   const apiBaseUrl = useStore((s) => s.apiBaseUrl);
 
-  // PWA
-  const deferredPrompt = useStore((s) => s.deferredPrompt);
-  const setDeferredPrompt = useStore((s) => s.setDeferredPrompt);
-
   const [showWifiDirect, setShowWifiDirect] = useState(false);
-  const [pwaInstalled, setPwaInstalled] = useState(false);
 
   const getDisplayIp = () => {
     if (serverIp) return serverIp;
@@ -38,17 +34,6 @@ export default function Home() {
     }
     return 'Cloud';
   };
-
-  const handleInstallPwa = useCallback(async () => {
-    if (deferredPrompt) {
-      try {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') setPwaInstalled(true);
-        setDeferredPrompt(null);
-      } catch { /* ignore */ }
-    }
-  }, [deferredPrompt, setDeferredPrompt]);
 
   return (
     <motion.div
@@ -213,26 +198,12 @@ export default function Home() {
 
           {/* ─── Utility Row: Install App + Browse ── */}
           <motion.div 
-            className={`grid gap-3 ${!pwaInstalled ? 'grid-cols-2' : 'grid-cols-1'}`}
+            className="grid grid-cols-2 gap-3"
             variants={fadeUp}
           >
 
-            {/* Install App */}
-            {!pwaInstalled && (
-              <button
-                type="button"
-                onClick={handleInstallPwa}
-                className="flex items-center gap-3 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-amber-500/20 px-4 py-3.5 transition-all active:scale-[0.97]"
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/12">
-                  <Smartphone className="h-4.5 w-4.5 text-amber-400" />
-                </div>
-                <div className="text-left min-w-0">
-                  <p className="text-[11px] font-bold text-slate-300 leading-tight">Install App</p>
-                  <p className="text-[9px] text-slate-600 leading-tight">1 MB · Offline ready</p>
-                </div>
-              </button>
-            )}
+            {/* Install App (PWA + APK) */}
+            <InstallAppButton />
 
             {/* Browse Files */}
             <a
