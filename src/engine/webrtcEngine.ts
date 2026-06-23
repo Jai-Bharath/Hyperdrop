@@ -30,11 +30,11 @@ import type { Socket } from 'socket.io-client';
 /** 256 KB — maximum safe SCTP chunk for Chrome / Firefox / Safari */
 const WEBRTC_CHUNK_SIZE = 256 * 1024;
 
-/** Back-pressure ceiling: don't exceed 16 MB in the send buffer */
-const BUFFER_HIGH_WATERMARK = 16 * 1024 * 1024;
+/** Back-pressure ceiling: don't exceed 2 MB in the send buffer (leaves plenty of safety room below the 16 MB browser limit) */
+const BUFFER_HIGH_WATERMARK = 2 * 1024 * 1024;
 
-/** Resume sending when buffer drops below this (256 KB — keeps the pipe full) */
-const BUFFER_LOW_WATERMARK = 256 * 1024;
+/** Resume sending when buffer drops below this (512 KB — keeps the network pipe full) */
+const BUFFER_LOW_WATERMARK = 512 * 1024;
 
 /** DataChannel label */
 const CHANNEL_LABEL = 'hyperdrop-file';
@@ -226,24 +226,35 @@ export class WebRTCTransfer {
             const chunkBuffer = await chunkBlob.arrayBuffer();
 
             // Back-pressure: wait if buffer exceeds HIGH watermark
-            // The LOW watermark event (at 256 KB) will resume us WHILE data is still flowing
+            // The LOW watermark event (at 512 KB) will resume us WHILE data is still flowing
             while (
               this.dc &&
               this.dc.readyState === 'open' &&
               this.dc.bufferedAmount > BUFFER_HIGH_WATERMARK &&
               !this.closed
             ) {
-              await new Promise<void>((resolve) => {
-                const handler = () => {
-                  this.dc?.removeEventListener('bufferedamountlow', handler);
+              await new Promise<void>((resolve, reject) => {
+                const cleanUp = () => {
+                  this.dc?.removeEventListener('bufferedamountlow', onLow);
+                  this.dc?.removeEventListener('close', onClose);
+                  this.dc?.removeEventListener('error', onError);
+                };
+                const onLow = () => {
+                  cleanUp();
                   resolve();
                 };
-                this.dc!.addEventListener('bufferedamountlow', handler);
-                // Safety timeout — don't wait forever (reduced from 5s to 2s for faster recovery)
-                setTimeout(() => {
-                  this.dc?.removeEventListener('bufferedamountlow', handler);
-                  resolve();
-                }, 2000);
+                const onClose = () => {
+                  cleanUp();
+                  reject(new Error('DataChannel closed while waiting for buffer to drain'));
+                };
+                const onError = () => {
+                  cleanUp();
+                  reject(new Error('DataChannel error while waiting for buffer to drain'));
+                };
+
+                this.dc!.addEventListener('bufferedamountlow', onLow);
+                this.dc!.addEventListener('close', onClose);
+                this.dc!.addEventListener('error', onError);
               });
             }
 
