@@ -16,7 +16,7 @@
 
 // ── Configuration ────────────────────────────────────────────
 const CHUNK_SIZE = 8 * 1024 * 1024;        // 8 MB chunks — fewer HTTP round trips
-const MAX_PARALLEL = 8;                     // concurrent uploads — saturate WiFi
+const MAX_PARALLEL = 4;                     // concurrent uploads — balanced for consumer WiFi routers
 const MAX_RETRIES = 5;                      // retries per chunk (extra for background tabs)
 const RETRY_BASE_DELAY_MS = 500;            // exponential backoff base (forgiving for bg throttling)
 const PROGRESS_THROTTLE_MS = 150;           // progress callback throttle

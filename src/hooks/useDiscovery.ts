@@ -2,10 +2,10 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useStore, type Device } from '../store/useStore';
 
 /** Polling interval for device discovery (ms) */
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 5000;
 
-/** Devices not seen for this long are pruned (ms) */
-const STALE_THRESHOLD_MS = 30000;
+/** Devices not seen for this long are pruned (ms) — generous to avoid killing socket-discovered devices */
+const STALE_THRESHOLD_MS = 120000;
 
 /**
  * Device discovery hook.
@@ -31,12 +31,29 @@ export function useDiscovery(): {
   const scanningRef = useRef(false);
 
   /**
+   * Check if a URL is a private/LAN address.
+   */
+  const isLanUrl = useCallback((url: string): boolean => {
+    const stripped = url.replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
+    return (
+      stripped.startsWith('192.168.') ||
+      stripped.startsWith('10.') ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(stripped) ||
+      stripped === '127.0.0.1' ||
+      stripped === 'localhost'
+    );
+  }, []);
+
+  /**
    * Fetch devices from the server and merge into the store.
-   * Deduplication is handled by addDevice (matches on device.id).
+   * Only polls when connected to a LAN server — cloud polling is useless
+   * (the Render server's /api/devices only returns its own mDNS-local devices).
    */
   const fetchDevices = useCallback(async () => {
     // Don't poll until we know the backend URL
     if (!apiBaseUrl) return;
+    // SKIP polling if connected to cloud signaling — it returns meaningless device lists
+    if (!isLanUrl(apiBaseUrl)) return;
     scanningRef.current = true;
 
     try {
@@ -54,14 +71,15 @@ export function useDiscovery(): {
         if (localId && device.id === localId) {
           continue;
         }
-        addDevice(device);
+        // Mark as HTTP-discovered so it CAN be pruned by stale timer
+        addDevice({ ...device, source: 'http' });
       }
     } catch {
       // Network error during discovery is non-fatal — just retry next poll
     } finally {
       scanningRef.current = false;
     }
-  }, [addDevice, apiBaseUrl]);
+  }, [addDevice, apiBaseUrl, isLanUrl]);
 
   // ── Polling loop ──
   useEffect(() => {

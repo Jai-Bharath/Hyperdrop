@@ -29,10 +29,11 @@ export default function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, peerTyping]);
 
-  // Clear unread when opened
+  // Clear unread when opened and sync store state
   useEffect(() => {
     if (isOpen) {
       setUnreadCount(0);
+      useStore.getState().setChatOpen(true);
       inputRef.current?.focus();
     }
   }, [isOpen, setUnreadCount]);
@@ -56,6 +57,21 @@ export default function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     const deviceId = getDeviceId();
     if (!socket) return;
 
+    // Get the actual device friendly name for remote display
+    const ua = navigator.userAgent;
+    let osName = 'Web';
+    if (/Android/i.test(ua)) osName = 'Android';
+    else if (/iPhone|iPad|iPod/i.test(ua)) osName = 'iOS';
+    else if (/Macintosh/i.test(ua)) osName = 'macOS';
+    else if (/Windows/i.test(ua)) osName = 'Windows';
+    else if (/Linux/i.test(ua)) osName = 'Linux';
+    let browser = 'Browser';
+    if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
+    else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Edg')) browser = 'Edge';
+    const deviceName = `${browser} on ${osName}`;
+
     const msg: ChatMessageData = {
       id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       text,
@@ -67,7 +83,8 @@ export default function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     };
 
     addChatMessage(msg);
-    socket.emit('chat:message', { ...msg, senderName: 'Peer' });
+    // Send with actual device name so receiver knows who sent it
+    socket.emit('chat:message', { ...msg, senderName: deviceName });
     socket.emit('chat:typing', { senderId: deviceId, typing: false });
     setInput('');
 

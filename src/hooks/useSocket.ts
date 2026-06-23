@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useStore, type Device } from '../store/useStore';
 import { handleAcceptedTransfer, triggerFileDownload, cancelPendingUpload, triggerWebRTCDownload } from './useTransfer';
 import { WebRTCTransfer } from '../engine/webrtcEngine';
+import { Capacitor } from '@capacitor/core';
 
 /** Shared socket instance for other hooks/components */
 let sharedSocket: Socket | null = null;
@@ -124,8 +125,7 @@ export function useSocket(): Socket | null {
     let targetUrl = socketUrl || ((import.meta as any).env.VITE_SOCKET_URL as string) || '';
     if (!targetUrl) {
       const origin = window.location.origin;
-      const isCapacitor = origin.startsWith('capacitor://') || 
-                          (origin.startsWith('http://localhost') && !window.location.port);
+      const isCapacitor = Capacitor.isNativePlatform();
       const isLocalDev = origin.includes('localhost') || 
                          origin.includes('127.0.0.1') || 
                          /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
@@ -224,7 +224,8 @@ export function useSocket(): Socket | null {
     socket.on('device:found', (device: Device) => {
       try {
         if (device.id !== deviceIdRef.current) {
-          addDevice(device);
+          // Mark as socket-discovered so it won't be pruned by stale timer
+          addDevice({ ...device, source: 'socket' });
 
           const currentApiBase = useStore.getState().apiBaseUrl;
           const isCurrentlyUsingCloud = currentApiBase && !isPrivateIp(currentApiBase);
@@ -264,6 +265,18 @@ export function useSocket(): Socket | null {
       } catch {
         // Ignore
       }
+    });
+
+    // ── Device Heartbeat — keeps lastSeen fresh to prevent stale pruning ──
+    socket.on('device:heartbeat', (payload: { deviceIds: string[]; timestamp: number }) => {
+      try {
+        const store = useStore.getState();
+        for (const id of payload.deviceIds) {
+          if (id !== deviceIdRef.current) {
+            store.updateDeviceLastSeen(id);
+          }
+        }
+      } catch { /* ignore */ }
     });
 
     // ── Transfer Events ──

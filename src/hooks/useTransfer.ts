@@ -64,7 +64,7 @@ async function probeLocalServer(): Promise<string | null> {
     const url = `http://${serverIp}:${useStore.getState().serverPort || 3001}`;
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       const res = await fetch(`${url}/api/info`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (res.ok) return url;
@@ -77,7 +77,7 @@ async function probeLocalServer(): Promise<string | null> {
   if (storeApiBase && isLanAddress(storeApiBase)) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       const res = await fetch(`${storeApiBase}/api/info`, { signal: controller.signal });
       clearTimeout(timeoutId);
       if (res.ok) return storeApiBase;
@@ -227,6 +227,10 @@ export async function handleAcceptedTransfer(id: string, _socket: any) {
   }
 
   try {
+    // Acquire BackgroundGuard to prevent tab throttling during WebRTC transfer
+    const { BackgroundGuard } = await import('../engine/backgroundGuard');
+    const guard = BackgroundGuard.acquire(id);
+
     const rtc = new WebRTCTransfer(socket, targetDeviceId);
     activeWebRTCTransfers.set(id, rtc);
 
@@ -249,13 +253,15 @@ export async function handleAcceptedTransfer(id: string, _socket: any) {
         pendingUploadFiles.delete(id);
         activeWebRTCTransfers.delete(id);
         socket.emit('transfer:done', { id });
+        guard.release();
         console.log(`[useTransfer] WebRTC P2P upload complete for ${id}`);
       },
       (error) => {
-        if (rtc.isClosed) return; // Intentional cancel — don't error
+        if (rtc.isClosed) { guard.release(); return; } // Intentional cancel — don't error
         useStore.getState().updateTransfer(id, { status: 'error', error: error.message });
         socket.emit('transfer:error', { id, error: error.message });
         activeWebRTCTransfers.delete(id);
+        guard.release();
       },
       { relativePath },
     );

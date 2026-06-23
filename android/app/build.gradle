@@ -18,10 +18,9 @@ android {
     }
     buildTypes {
         debug {
-            // Enable shrinking for smaller debug APK
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Do NOT minify debug builds — ProGuard strips WebView JavaScript bridges
+            minifyEnabled false
+            shrinkResources false
         }
         release {
             minifyEnabled true

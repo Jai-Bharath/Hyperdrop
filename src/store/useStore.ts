@@ -15,6 +15,8 @@ export interface Device {
   platform: string;
   supports5GHz: boolean;
   lastSeen: number;
+  /** How this device was discovered — 'socket' devices are managed by device:lost events and should NOT be pruned by the stale timer */
+  source?: 'socket' | 'http' | 'mdns';
 }
 
 export interface ChunkProgress {
@@ -213,7 +215,10 @@ export const useStore = create<HyperDropState>()(
       pruneStaleDevices: (maxAge: number) =>
         set((state: HyperDropState) => {
           const now = Date.now();
-          const active = state.devices.filter((d: Device) => now - d.lastSeen < maxAge);
+          // NEVER prune socket-discovered devices — their lifecycle is managed by device:lost events
+          const active = state.devices.filter(
+            (d: Device) => d.source === 'socket' || now - d.lastSeen < maxAge
+          );
           return {
             devices: active,
             selectedDevice:
