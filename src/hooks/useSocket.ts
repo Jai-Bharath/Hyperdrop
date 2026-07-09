@@ -31,8 +31,8 @@ function isPrivateIp(urlOrIp: string): boolean {
   );
 }
 
-/** Default public cloud signaling server fallback */
-const CLOUD_SIGNAL_URL = 'https://hyperdrop-tzjv.onrender.com';
+/** Default local companion server port */
+const LOCAL_SIGNAL_PORT = 53317;
 
 /**
  * Generate a random device ID or retrieve the persisted one.
@@ -123,19 +123,20 @@ export function useSocket(): Socket | null {
   const addTransfer = useStore((s) => s.addTransfer);
 
   useEffect(() => {
-    // ── Resolve dynamic connection URL ──
+    // ── Resolve dynamic connection URL ── (100% offline — local companion server only)
     let targetUrl = socketUrl || ((import.meta as any).env.VITE_SOCKET_URL as string) || '';
     if (!targetUrl) {
       const origin = window.location.origin;
-      const isCapacitor = Capacitor.isNativePlatform();
       const isLocalDev = origin.includes('localhost') || 
                          origin.includes('127.0.0.1') || 
                          /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
 
-      if (isCapacitor || !isLocalDev) {
-        targetUrl = CLOUD_SIGNAL_URL;
-      } else {
+      if (isLocalDev) {
+        // Dev server or direct LAN access — connect to same origin
         targetUrl = origin;
+      } else {
+        // Hosted static site (e.g. Vercel) — try local companion server on this machine
+        targetUrl = `http://localhost:${LOCAL_SIGNAL_PORT}`;
       }
     }
 
@@ -177,9 +178,9 @@ export function useSocket(): Socket | null {
             useStore.getState().setApiBaseUrl(targetUrl);
           });
       } else {
-        useStore.getState().setServerInfo('', 53317, 2121);
+        useStore.getState().setServerInfo('', LOCAL_SIGNAL_PORT, 2121);
         useStore.getState().setApiBaseUrl(targetUrl);
-        console.log(`[useSocket] Cloud signaling connected. WebRTC P2P will handle file data.`);
+        console.log(`[useSocket] Local signaling connected.`);
       }
 
       // Register device identification
