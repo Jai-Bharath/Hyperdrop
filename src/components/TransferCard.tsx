@@ -100,13 +100,20 @@ export default function TransferCard({ transfer, onCancel, onDismiss, onRetry }:
         {/* Details */}
         <div className="min-w-0 flex-1 space-y-1.5">
           {/* File name + size */}
-          <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold text-slate-100">
-              {transfer.fileName}
-            </p>
-            <span className="shrink-0 text-xs text-slate-500">
-              {formatBytes(transfer.fileSize)}
-            </span>
+          <div className="flex flex-col space-y-0.5">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold text-slate-100">
+                {transfer.fileName}
+              </p>
+              <span className="shrink-0 text-xs text-slate-500">
+                {formatBytes(transfer.fileSize)}
+              </span>
+            </div>
+            {transfer.deviceName && (
+              <p className="text-[10px] text-slate-500 font-medium">
+                {transfer.direction === 'send' ? 'To' : 'From'}: {transfer.deviceName}
+              </p>
+            )}
           </div>
 
           {/* Status row */}

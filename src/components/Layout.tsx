@@ -151,12 +151,13 @@ export default function Layout() {
         </AnimatePresence>
       </main>
 
-      {/* ─── Floating Chat FAB (Mobile) ─────────────────────────── */}
+      {/* ─── Floating Chat Button (Mobile) — labeled for clarity ─── */}
       <button
         onClick={handleChatToggle}
-        className="fixed bottom-24 right-5 z-40 sm:hidden flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-500 shadow-xl shadow-brand-500/30 active:scale-90 transition-all"
+        className="fixed bottom-24 right-4 z-40 sm:hidden flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-500 shadow-xl shadow-brand-500/30 active:scale-90 transition-all"
       >
-        <MessageCircle className="h-6 w-6 text-white" />
+        <MessageCircle className="h-5 w-5 text-white" />
+        <span className="text-[11px] font-bold text-white uppercase tracking-wider">Chat</span>
         <AnimatePresence>
           {unreadCount > 0 && (
             <motion.span

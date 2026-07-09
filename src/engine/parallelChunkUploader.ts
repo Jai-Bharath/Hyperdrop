@@ -16,7 +16,7 @@
 
 // ── Configuration ────────────────────────────────────────────
 const CHUNK_SIZE = 8 * 1024 * 1024;        // 8 MB chunks — fewer HTTP round trips
-const MAX_PARALLEL = 4;                     // concurrent uploads — balanced for consumer WiFi routers
+const MAX_PARALLEL = 6;                     // concurrent uploads — aggressive for LAN transfers
 const MAX_RETRIES = 5;                      // retries per chunk (extra for background tabs)
 const RETRY_BASE_DELAY_MS = 500;            // exponential backoff base (forgiving for bg throttling)
 const PROGRESS_THROTTLE_MS = 150;           // progress callback throttle
@@ -34,6 +34,8 @@ export interface ParallelUploadOptions {
   file: File;
   baseUrl: string;
   transferId: string;
+  /** Session token from PrepareResponse — required for server auth */
+  sessionToken?: string;
   onProgress: (progress: UploadProgress) => void;
   onComplete: () => void;
   onError: (error: Error) => void;
@@ -113,20 +115,28 @@ async function uploadChunk(
   transferId: string,
   totalChunks: number,
   signal?: AbortSignal,
+  sessionToken?: string,
 ): Promise<void> {
   // Slice the raw bytes — no FormData wrapper
   const blob = file.slice(chunk.start, chunk.end);
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/octet-stream',
+    'X-Transfer-Id': transferId,
+    'X-Chunk-Index': String(chunk.index),
+    'X-Total-Chunks': String(totalChunks),
+    'X-File-Name': encodeURIComponent(file.name),
+    'X-File-Size': String(file.size),
+  };
+
+  // Attach session token if available (required by server auth)
+  if (sessionToken) {
+    headers['X-HyperDrop-Session'] = sessionToken;
+  }
+
   const response = await fetch(`${baseUrl}/api/chunk`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/octet-stream',
-      'X-Transfer-Id': transferId,
-      'X-Chunk-Index': String(chunk.index),
-      'X-Total-Chunks': String(totalChunks),
-      'X-File-Name': encodeURIComponent(file.name),
-      'X-File-Size': String(file.size),
-    },
+    headers,
     body: blob,
     signal,
   });
@@ -145,6 +155,7 @@ async function uploadChunkWithRetry(
   transferId: string,
   totalChunks: number,
   signal?: AbortSignal,
+  sessionToken?: string,
 ): Promise<void> {
   let lastError: Error | null = null;
 
@@ -153,7 +164,7 @@ async function uploadChunkWithRetry(
       if (signal?.aborted) {
         throw new DOMException('Upload aborted', 'AbortError');
       }
-      await uploadChunk(file, chunk, baseUrl, transferId, totalChunks, signal);
+      await uploadChunk(file, chunk, baseUrl, transferId, totalChunks, signal, sessionToken);
       return; // Success
     } catch (err: any) {
       if (err.name === 'AbortError') throw err;
@@ -185,7 +196,7 @@ async function getReceivedChunks(
 
 // ── Main Parallel Upload Engine ──────────────────────────────
 async function doUpload(options: ParallelUploadOptions): Promise<void> {
-  const { file, baseUrl, transferId, onProgress, onComplete, onError, signal } = options;
+  const { file, baseUrl, transferId, sessionToken, onProgress, onComplete, onError, signal } = options;
 
   // Listen for visibility changes — log but do NOT pause the transfer
   const onVisibilityChange = () => {
@@ -276,7 +287,7 @@ async function doUpload(options: ParallelUploadOptions): Promise<void> {
           const chunk = chunkQueue.shift()!;
           activeUploads++;
 
-          uploadChunkWithRetry(file, chunk, baseUrl, transferId, totalChunks, signal)
+          uploadChunkWithRetry(file, chunk, baseUrl, transferId, totalChunks, signal, sessionToken)
             .then(() => {
               if (hasErrored) return;
               activeUploads--;

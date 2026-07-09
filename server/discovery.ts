@@ -16,7 +16,7 @@ interface DiscoveredDevice {
 const SERVICE_NAME = '_hyperdrop._tcp.local'
 const QUERY_INTERVAL = 5_000    // Query every 5 seconds
 const PRUNE_TIMEOUT = 15_000    // Remove devices not seen for 15 seconds
-const SERVER_PORT = 3001
+const SERVER_PORT = 53317
 
 // ─── State ────────────────────────────────────────────────────────────
 const discoveredDevices = new Map<string, DiscoveredDevice>()

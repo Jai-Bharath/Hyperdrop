@@ -5,9 +5,13 @@ import Home from './pages/Home';
 import Send from './pages/Send';
 import Receive from './pages/Receive';
 import History from './pages/History';
-import { useSocket } from './hooks/useSocket';
+import { initializeDiscovery } from './hooks/useDiscovery';
+import { useIncomingTransfers } from './hooks/useIncomingTransfers';
+import { useLocalSync } from './hooks/useLocalSync';
 import { useStore } from './store/useStore';
 import DisconnectAlert from './components/DisconnectAlert';
+import ConsentModal from './components/ConsentModal';
+
 
 // ─── Error Boundary ─────────────────────────────────────────────────
 interface ErrorBoundaryProps {
@@ -74,14 +78,26 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-// ─── Socket Manager Component ────────────────────────────────────────
-// Mounts the useSocket hook at the top level to preserve the connection
-function SocketManager({ children }: { children: ReactNode }) {
-  useSocket();
+// ─── Discovery Manager Component ────────────────────────────────────
+// Calls initializeDiscovery() ONCE at app startup. Never tears down.
+// Pages read device data from the global Zustand store.
+function DiscoveryManager({ children }: { children: ReactNode }) {
+  const { pendingRequest, accept, decline } = useIncomingTransfers();
+  useLocalSync();
+
+  useEffect(() => {
+    initializeDiscovery();
+  }, []);
+
   return (
     <>
       {children}
       <DisconnectAlert />
+      <ConsentModal
+        request={pendingRequest}
+        onAccept={accept}
+        onDecline={decline}
+      />
     </>
   );
 }
@@ -125,7 +141,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <SocketManager>
+        <DiscoveryManager>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
@@ -135,7 +151,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
-        </SocketManager>
+        </DiscoveryManager>
       </BrowserRouter>
     </ErrorBoundary>
   );

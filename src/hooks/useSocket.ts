@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useStore, type Device } from '../store/useStore';
-import { handleAcceptedTransfer, triggerFileDownload, cancelPendingUpload, triggerWebRTCDownload } from './useTransfer';
+import { handleAcceptedSocketTransfer, triggerFileDownload, cancelPendingUpload, triggerWebRTCDownload } from './useTransfer';
 import { WebRTCTransfer } from '../engine/webrtcEngine';
 import { Capacitor } from '@capacitor/core';
+import { playSuccessChime, playMessageChime } from '../utils/audio';
+import { showDesktopNotification } from '../utils/notification';
 
 /** Shared socket instance for other hooks/components */
 let sharedSocket: Socket | null = null;
@@ -51,7 +53,7 @@ function getOrCreateDeviceId(): string {
 /**
  * Get a friendly name for the local device based on browser and OS.
  */
-function getDeviceFriendlyName(): string {
+export function getDeviceFriendlyName(): string {
   const ua = navigator.userAgent;
   const isAndroid = /Android/i.test(ua);
   const isIOS = /iPhone|iPad|iPod/i.test(ua);
@@ -175,7 +177,7 @@ export function useSocket(): Socket | null {
             useStore.getState().setApiBaseUrl(targetUrl);
           });
       } else {
-        useStore.getState().setServerInfo('', 3001, 2121);
+        useStore.getState().setServerInfo('', 53317, 2121);
         useStore.getState().setApiBaseUrl(targetUrl);
         console.log(`[useSocket] Cloud signaling connected. WebRTC P2P will handle file data.`);
       }
@@ -232,7 +234,7 @@ export function useSocket(): Socket | null {
           const deviceHasPrivateIp = device.ip && isPrivateIp(device.ip);
 
           if (isCurrentlyUsingCloud && deviceHasPrivateIp) {
-            const lanUrl = `http://${device.ip}:3001`;
+            const lanUrl = `http://${device.ip}:53317`;
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 2000);
 
@@ -310,7 +312,7 @@ export function useSocket(): Socket | null {
 
     socket.on('transfer:accept', (payload: { id: string }) => {
       try {
-        handleAcceptedTransfer(payload.id, socket);
+        handleAcceptedSocketTransfer(payload.id, socket);
       } catch (err) {
         console.error('[useSocket] Failed to handle accepted transfer:', err);
       }
@@ -386,16 +388,18 @@ export function useSocket(): Socket | null {
         const transfer = transfers.find((t) => t.id === payload.id);
         
         if (transfer) {
-          updateTransfer(payload.id, { status: 'done', transferred: payload.fileSize || transfer.fileSize || 0 });
-
-          // Only trigger download if we are the RECEIVER and it's NOT a WebRTC transfer
-          // (WebRTC downloads are handled by the receiveFile callback directly)
-          if (transfer.direction === 'receive' && transfer.status !== 'done' && transfer.protocol !== 'webrtc') {
+          updateTransfer(payload.id, { status: 'done', transferred: transfer.fileSize });
+          if (!downloadedTransfers.has(payload.id)) {
             downloadedTransfers.add(payload.id);
-            const fileName = payload.fileName || transfer.fileName;
-            triggerFileDownload(fileName, payload.id);
+            if (transfer.protocol !== 'webrtc') {
+              triggerFileDownload(transfer.fileName, payload.id);
+            }
+            playSuccessChime();
+            showDesktopNotification(
+              transfer.direction === 'send' ? 'File Sent' : 'File Received',
+              `${transfer.fileName} finished successfully`
+            );
           }
-
           const duration = Math.max(1, (Date.now() - transfer.startedAt) / 1000);
           useStore.getState().addHistoryEntry({
             id: transfer.id,
@@ -406,7 +410,7 @@ export function useSocket(): Socket | null {
             speed: transfer.fileSize / duration,
             duration,
             completedAt: Date.now(),
-            deviceName: transfer.direction === 'send' ? 'Receiver' : 'Sender',
+            deviceName: transfer.deviceName || (transfer.direction === 'send' ? 'Receiver' : 'Sender'),
           });
         } else {
           updateTransfer(payload.id, { status: 'done', transferred: payload.fileSize || 0 });
@@ -516,6 +520,8 @@ export function useSocket(): Socket | null {
             });
             webrtcTransfers.delete(transferId);
             console.log(`[useSocket] WebRTC receive complete: ${transferFileName}`);
+            playSuccessChime();
+            showDesktopNotification('File Received', `${transferFileName} received successfully over WebRTC`);
           },
           (error) => {
             if (rtc.isClosed) return; // Intentional cancel
@@ -627,6 +633,11 @@ export function useSocket(): Socket | null {
           read: false,
         };
         useStore.getState().addChatMessage(message);
+        
+        if (!useStore.getState().chatOpen) {
+          playMessageChime();
+          showDesktopNotification(`New message from ${data.senderName}`, data.text);
+        }
         
         if (useStore.getState().chatOpen) {
           socket.emit('chat:read', { messageId: data.id, readerId: deviceIdRef.current });

@@ -14,18 +14,18 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:53317',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:53317',
         ws: true,
       },
       '/download': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:53317',
       },
       '/browse': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:53317',
       },
     },
   },

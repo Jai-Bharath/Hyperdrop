@@ -144,7 +144,7 @@ export function setupSocketServer(io: Server): void {
 
       const name = (typeof data === 'object' && data && data.name) || `Device-${deviceId.slice(-4)}`
       const platform = (typeof data === 'object' && data && data.platform) || 'web'
-      const port = (typeof data === 'object' && data && data.port) || 3001
+      const port = (typeof data === 'object' && data && data.port) || 53317
       const supports5GHz = typeof data === 'object' && data ? !!data.supports5GHz : true
 
       const device: Device = {
@@ -224,9 +224,6 @@ export function setupSocketServer(io: Server): void {
           socket.emit('device:found', otherDevice)
         }
       }
-
-      // Confirm room join to the device itself
-      socket.emit('room:joined', { roomId, members: existing.size })
     })
 
     // ── WebRTC Signaling Relays (Highly Targeted) ──────────────────
@@ -505,7 +502,7 @@ export function setupSocketServer(io: Server): void {
               closeFileHandle(id).catch(() => {})
             }
           }
-        }, 15000) // 15 seconds grace period
+        }, 30000) // 30 seconds grace period — mobile devices need longer to reconnect
 
         disconnectTimeouts.set(deviceId, timeout)
       } else {
@@ -514,7 +511,7 @@ export function setupSocketServer(io: Server): void {
     })
   })
 
-  // Periodic heartbeat: re-broadcast device presence to prevent client-side stale pruning
+  // Reduced keep-alive: only update timestamps, don't flood full device payloads
   const roomKeepAliveInterval = setInterval(() => {
     try {
       for (const [roomName, devicesMap] of roomDevices.entries()) {
@@ -522,19 +519,12 @@ export function setupSocketServer(io: Server): void {
           for (const device of devicesMap.values()) {
             device.lastSeen = Date.now()
           }
-          // Broadcast lightweight heartbeat to all devices in this room
-          // so their client-side lastSeen stays fresh and they don't get pruned
-          const deviceIds = Array.from(devicesMap.keys())
-          io.to(roomName).emit('device:heartbeat', {
-            deviceIds,
-            timestamp: Date.now(),
-          })
         }
       }
     } catch (err) {
       console.error('[socket] Error in room keep-alive interval:', err)
     }
-  }, 15000) // Every 15 seconds
+  }, 30000)
 
   // Clean up interval if process terminates
   const cleanupInterval = () => clearInterval(roomKeepAliveInterval)

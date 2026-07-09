@@ -1,16 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Send, Download, Wifi, Monitor, Zap,
-  ChevronRight, Check, ArrowUpRight
+  Send, Download, Wifi, Zap, Smartphone, QrCode, Globe, Copy, Check
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { useDiscovery } from '../hooks/useDiscovery';
-import DeviceRadar from '../components/DeviceRadar';
+import { getMyIp } from '../hooks/useDiscovery';
+import DeviceList from '../components/DeviceList';
+import QRCodeDisplay from '../components/QRCodeDisplay';
 import DropZone from '../components/DropZone';
-import WifiDirectModal from '../components/WifiDirectModal';
-import InstallAppButton from '../components/InstallAppButton';
+import { LOCAL_HTTP_PORT } from '../shared/protocol';
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
@@ -19,31 +18,44 @@ const fadeUp = {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { devices } = useDiscovery();
-  const selectDevice = useStore((s) => s.selectDevice);
   const connected = useStore((s) => s.connected);
+  const devices = useStore((s) => s.devices);
   const serverIp = useStore((s) => s.serverIp);
-  const apiBaseUrl = useStore((s) => s.apiBaseUrl);
+  const [copied, setCopied] = useState(false);
 
-  const [showWifiDirect, setShowWifiDirect] = useState(false);
+  // Use IP from store (set by discovery singleton)
+  const myIp = serverIp || getMyIp();
+  const qrUrl = myIp ? `hyperdrop://${myIp}:${LOCAL_HTTP_PORT}` : '';
 
-  const getDisplayIp = () => {
-    if (serverIp) return serverIp;
-    if (apiBaseUrl) {
-      try { return new URL(apiBaseUrl).hostname; } catch { return 'Cloud'; }
-    }
-    return 'Cloud';
+  const handleCopyIp = () => {
+    if (!myIp) return;
+    navigator.clipboard.writeText(`${myIp}:${LOCAL_HTTP_PORT}`).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
+
+  // Convert store devices to Peer-like objects for DeviceList
+  const peers = devices.map(d => ({
+    fingerprint: d.id,
+    alias: d.name,
+    ip: d.ip,
+    port: d.port,
+    deviceType: (d.platform || 'mobile') as 'mobile' | 'desktop' | 'tablet' | 'web',
+    source: 'scan' as const,
+    verified: true,
+    failCount: 0,
+    lastSeen: d.lastSeen,
+  }));
 
   return (
     <motion.div
-      className="mx-auto max-w-lg lg:max-w-5xl space-y-5"
+      className="mx-auto max-w-lg space-y-4 pb-8"
       initial="initial"
       animate="animate"
     >
       {/* ─── Hero ──────────────────────────────────────────── */}
-      <motion.section id="hero" className="text-center space-y-2 pt-4" variants={fadeUp}>
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+      <motion.section className="text-center space-y-1 pt-2" variants={fadeUp}>
+        <h1 className="text-3xl font-extrabold tracking-tight">
           <span className="text-gradient">HyperDrop</span>
         </h1>
         <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-[0.2em]">
@@ -51,182 +63,122 @@ export default function Home() {
         </p>
       </motion.section>
 
-      {/* ─── Drop Zone (Hero Position) ──────────────────────── */}
-      <DropZone />
-
-      {/* ─── Main Grid ─────────────────────────────────────── */}
-      <div className="grid gap-5 lg:grid-cols-12 lg:gap-6 items-start">
-
-        {/* ── Right: Device Radar (shows first on mobile) ── */}
-        <div className="space-y-5 lg:col-span-5 order-1 lg:order-2 w-full">
-
-          {/* Stats — compact single row */}
-          <motion.div
-            id="stats-row"
-            className="flex items-center gap-2.5"
-            variants={fadeUp}
-          >
-            {/* Devices count */}
-            <div className="flex-1 flex items-center gap-2.5 rounded-2xl bg-white/[0.02] border border-white/[0.04] px-3.5 py-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/10">
-                <Monitor className="h-4 w-4 text-brand-400" />
-              </div>
-              <div>
-                <span className="text-lg font-extrabold text-white leading-none">{devices.length}</span>
-                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Devices</p>
-              </div>
-            </div>
-
-            {/* Server IP */}
-            <div className="flex-1 flex items-center gap-2.5 rounded-2xl bg-white/[0.02] border border-white/[0.04] px-3.5 py-3">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all ${
-                connected ? 'bg-emerald-500/10' : 'bg-red-500/10'
-              }`}>
-                <Wifi className={`h-4 w-4 ${connected ? 'text-emerald-400' : 'text-red-400'}`} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10px] font-mono font-bold text-slate-300 truncate block leading-tight" title={getDisplayIp()}>
-                  {getDisplayIp()}
-                </span>
-                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
-                  {connected ? 'Connected' : 'Offline'}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Device Radar */}
-          <motion.div variants={fadeUp}>
-            <DeviceRadar
-              devices={devices}
-              onSelectDevice={(device) => {
-                selectDevice(device);
-                navigate('/send');
-              }}
-            />
-          </motion.div>
-        </div>
-
-        {/* ── Left: Actions column ── */}
-        <div className="space-y-4 lg:col-span-7 order-2 lg:order-1 w-full">
-
-          {/* ─── WiFi Direct Card (HERO feature) ─────────── */}
-          <motion.div
-            className="relative overflow-hidden rounded-3xl cursor-pointer group"
-            variants={fadeUp}
-            whileHover={{ scale: 1.01, y: -2 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => setShowWifiDirect(true)}
-          >
-            {/* Background layers */}
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/12 via-blue-600/8 to-indigo-600/12" />
-            <div className="absolute inset-0 border border-cyan-500/15 rounded-3xl group-hover:border-cyan-400/30 transition-all duration-500" />
-            <div className="absolute top-0 right-0 h-28 w-28 bg-cyan-500/10 rounded-full blur-3xl -mr-6 -mt-6 group-hover:bg-cyan-400/15 transition-all duration-700" />
-
-            <div className="relative p-5 sm:p-6 space-y-3.5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3.5">
-                  <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/15 border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
-                    <Wifi className="h-6 w-6 text-cyan-400" />
-                    <motion.div
-                      className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-cyan-400"
-                      animate={{ scale: [1, 1.4, 1], opacity: [1, 0.4, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-[15px] font-extrabold text-white tracking-tight">WiFi Direct Transfer</h3>
-                    <p className="text-[10px] text-cyan-400/50 font-semibold mt-0.5">
-                      Same WiFi · No Hotspot · No Internet
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-cyan-500/30 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all mt-1" />
-              </div>
-
-              {/* Chips */}
-              <div className="flex flex-wrap gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/10 border border-cyan-500/12 px-2.5 py-0.5 text-[9px] font-bold text-cyan-400">
-                  <Zap className="h-2.5 w-2.5" /> 100+ MB/s
-                </span>
-                <span className="inline-flex items-center rounded-full bg-white/[0.03] border border-white/[0.05] px-2.5 py-0.5 text-[9px] font-bold text-slate-500">
-                  2.4 & 5 GHz
-                </span>
-                {devices.length > 0 && (
-                  <motion.span
-                    className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/12 px-2.5 py-0.5 text-[9px] font-bold text-emerald-400"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                  >
-                    <Check className="h-2.5 w-2.5" /> {devices.length} device{devices.length !== 1 ? 's' : ''}
-                  </motion.span>
-                )}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ─── Quick Actions Row ────────────────────────── */}
-          <motion.div
-            id="quick-actions"
-            className="grid grid-cols-2 gap-3"
-            variants={fadeUp}
-          >
-            <button
-              id="btn-quick-send"
-              type="button"
-              onClick={() => navigate('/send')}
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-500 p-[1px] shadow-lg shadow-brand-500/15 hover:shadow-brand-500/30 transition-all active:scale-[0.97]"
-            >
-              <div className="flex items-center justify-center gap-2.5 rounded-[15px] bg-gradient-to-br from-brand-600 to-brand-500 px-5 py-4">
-                <Send className="h-4.5 w-4.5 text-white" />
-                <span className="text-sm font-bold text-white">Send Files</span>
-              </div>
+      {/* ─── Connection Status ──────────────────────────────── */}
+      <motion.div variants={fadeUp} transition={{ delay: 0.05 }}>
+        <div className={`flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-2xl text-[11px] font-bold transition-all ${
+          connected
+            ? 'bg-emerald-500/[0.06] border border-emerald-500/15 text-emerald-400'
+            : 'bg-red-500/[0.06] border border-red-500/15 text-red-400'
+        }`}>
+          <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+          {connected ? (
+            <>Online{myIp ? ` · ${myIp}` : ''}</>
+          ) : (
+            'Disconnected'
+          )}
+          {myIp && (
+            <button type="button" onClick={handleCopyIp} className="ml-1 p-0.5">
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3 opacity-50" />}
             </button>
-
-            <button
-              id="btn-quick-receive"
-              type="button"
-              onClick={() => navigate('/receive')}
-              className="group relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-brand-500/20 transition-all active:scale-[0.97] shadow-lg shadow-black/10"
-            >
-              <div className="flex items-center justify-center gap-2.5 px-5 py-4">
-                <Download className="h-4.5 w-4.5 text-slate-300" />
-                <span className="text-sm font-bold text-slate-300">Receive</span>
-              </div>
-            </button>
-          </motion.div>
-
-          {/* ─── Utility Row: Install App + Browse ── */}
-          <motion.div 
-            className="grid grid-cols-2 gap-3"
-            variants={fadeUp}
-          >
-
-            {/* Install App (PWA + APK) */}
-            <InstallAppButton />
-
-            {/* Browse Files */}
-            <a
-              href={serverIp ? `http://${serverIp}:3001/browse` : 'http://localhost:3001/browse'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-emerald-500/20 px-4 py-3.5 transition-all active:scale-[0.97]"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/12">
-                <ArrowUpRight className="h-4.5 w-4.5 text-emerald-400" />
-              </div>
-              <div className="text-left min-w-0">
-                <p className="text-[11px] font-bold text-slate-300 leading-tight">Browse Files</p>
-                <p className="text-[9px] text-slate-600 leading-tight">Saved downloads</p>
-              </div>
-            </a>
-          </motion.div>
-
+          )}
         </div>
-      </div>
+      </motion.div>
 
-      {/* ─── Modals ────────────────────────────────────────── */}
-      <WifiDirectModal isOpen={showWifiDirect} onClose={() => setShowWifiDirect(false)} />
+      {/* ─── Send / Receive Hero Buttons ─────────────────────── */}
+      <motion.div className="grid grid-cols-2 gap-3" variants={fadeUp} transition={{ delay: 0.1 }}>
+        <button
+          type="button"
+          onClick={() => navigate('/send')}
+          className="group relative overflow-hidden rounded-2xl p-[1px] shadow-lg shadow-brand-500/15 hover:shadow-brand-500/30 transition-all active:scale-[0.97]"
+        >
+          <div className="flex flex-col items-center gap-2 rounded-[15px] bg-gradient-to-br from-brand-600 to-brand-500 px-5 py-5">
+            <Send className="h-6 w-6 text-white" />
+            <span className="text-sm font-bold text-white">Send</span>
+            <span className="text-[9px] text-white/50 font-medium">Pick files & share</span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/receive')}
+          className="group relative overflow-hidden rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-emerald-500/20 transition-all active:scale-[0.97] shadow-lg shadow-black/10"
+        >
+          <div className="flex flex-col items-center gap-2 px-5 py-5">
+            <Download className="h-6 w-6 text-emerald-400" />
+            <span className="text-sm font-bold text-slate-200">Receive</span>
+            <span className="text-[9px] text-slate-500 font-medium">Show QR to sender</span>
+          </div>
+        </button>
+      </motion.div>
+
+      {/* ─── Drop Zone ─────────────────────────────────────── */}
+      <motion.div variants={fadeUp} transition={{ delay: 0.12 }}>
+        <DropZone />
+      </motion.div>
+
+      {/* ─── Your Device QR Code ──────────────────────────────── */}
+      {myIp && (
+        <motion.div variants={fadeUp} transition={{ delay: 0.15 }}>
+          <div className="card">
+            <div className="flex flex-col items-center gap-3 py-2">
+              <h2 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                <QrCode className="h-3.5 w-3.5" /> Your Device QR
+              </h2>
+              <QRCodeDisplay url={qrUrl} size={140} />
+              <p className="text-[10px] text-slate-500 text-center">
+                Other devices can scan this to connect
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ─── Nearby Devices ───────────────────────────────────── */}
+      <motion.div variants={fadeUp} transition={{ delay: 0.2 }}>
+        <div className="card space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <Smartphone className="h-3.5 w-3.5" /> Nearby Devices
+            </h2>
+            <span className="text-[10px] font-mono text-slate-600">
+              {devices.length} found
+            </span>
+          </div>
+          <DeviceList
+            peers={peers}
+            onSelect={(peer) => {
+              useStore.getState().selectDevice({
+                id: peer.fingerprint,
+                name: peer.alias,
+                ip: peer.ip,
+                port: peer.port,
+                platform: peer.deviceType,
+                supports5GHz: true,
+                lastSeen: Date.now(),
+              });
+              navigate('/send');
+            }}
+            isScanning={false}
+          />
+        </div>
+      </motion.div>
+
+      {/* ─── Feature chips ────────────────────────────────────── */}
+      <motion.div
+        className="flex flex-wrap justify-center gap-2 pt-1"
+        variants={fadeUp}
+        transition={{ delay: 0.25 }}
+      >
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.03] border border-white/[0.05] px-3 py-1 text-[9px] font-bold text-slate-500">
+          <Zap className="h-2.5 w-2.5 text-amber-400" /> LAN Speed
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.03] border border-white/[0.05] px-3 py-1 text-[9px] font-bold text-slate-500">
+          <Wifi className="h-2.5 w-2.5 text-cyan-400" /> WiFi / Hotspot
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.03] border border-white/[0.05] px-3 py-1 text-[9px] font-bold text-slate-500">
+          <Globe className="h-2.5 w-2.5 text-emerald-400" /> No Internet
+        </span>
+      </motion.div>
     </motion.div>
   );
 }

@@ -37,3 +37,6 @@ files/
 android/app/build/
 android/app/src/main/assets/public/
 ios/App/App/public/
+
+# Binary APK artifacts
+*.apk

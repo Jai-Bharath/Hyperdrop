@@ -1,4 +1,13 @@
-import type { Socket } from 'socket.io-client';
+/**
+ * Minimal Socket-like interface for WebRTC signaling.
+ * In zero-cloud mode, this is only used for web-to-web transfers via a
+ * lightweight signaling channel (not the old Render Socket.IO server).
+ */
+interface Socket {
+  emit(event: string, data: any): void;
+  on(event: string, handler: (...args: any[]) => void): void;
+  off(event: string, handler?: (...args: any[]) => void): void;
+}
 
 /**
  * HyperDrop WebRTC DataChannel Transfer Engine v3

@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, MessageCircle, Clipboard, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { getSharedSocket, getDeviceId } from '../hooks/useSocket';
+import { sendChatMessage as httpSendChat } from '../hooks/useLocalTransport';
+import { LOCAL_HTTP_PORT } from '../shared/protocol';
 import ChatBubble, { type ChatMessageData } from './ChatBubble';
 import ClipboardSync from './ClipboardSync';
 
@@ -49,33 +50,17 @@ export default function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     return codePatterns.some(p => p.test(text));
   };
 
+  // Get the fingerprint for identity
+  const myFingerprint = localStorage.getItem('hyperdrop-fingerprint') || 'unknown';
+
   const sendMessage = useCallback(() => {
     const text = input.trim();
     if (!text) return;
 
-    const socket = getSharedSocket();
-    const deviceId = getDeviceId();
-    if (!socket) return;
-
-    // Get the actual device friendly name for remote display
-    const ua = navigator.userAgent;
-    let osName = 'Web';
-    if (/Android/i.test(ua)) osName = 'Android';
-    else if (/iPhone|iPad|iPod/i.test(ua)) osName = 'iOS';
-    else if (/Macintosh/i.test(ua)) osName = 'macOS';
-    else if (/Windows/i.test(ua)) osName = 'Windows';
-    else if (/Linux/i.test(ua)) osName = 'Linux';
-    let browser = 'Browser';
-    if (ua.includes('Chrome') && !ua.includes('Edg')) browser = 'Chrome';
-    else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
-    else if (ua.includes('Firefox')) browser = 'Firefox';
-    else if (ua.includes('Edg')) browser = 'Edge';
-    const deviceName = `${browser} on ${osName}`;
-
     const msg: ChatMessageData = {
       id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       text,
-      senderId: deviceId,
+      senderId: myFingerprint,
       senderName: 'You',
       timestamp: Date.now(),
       isCode: detectCode(text),
@@ -83,16 +68,21 @@ export default function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     };
 
     addChatMessage(msg);
-    // Send with actual device name so receiver knows who sent it
-    socket.emit('chat:message', { ...msg, senderName: deviceName });
-    socket.emit('chat:typing', { senderId: deviceId, typing: false });
+
+    // Send to all connected peer devices via HTTP
+    for (const device of devices) {
+      httpSendChat(device.ip, device.port || LOCAL_HTTP_PORT, text, msg.isCode).catch((err) => {
+        console.warn('[ChatPanel] Failed to send to', device.name, err);
+      });
+    }
+
     setInput('');
 
     // Reset textarea height
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
     }
-  }, [input, addChatMessage]);
+  }, [input, addChatMessage, devices, myFingerprint]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -101,16 +91,6 @@ export default function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     const ta = e.target;
     ta.style.height = 'auto';
     ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
-
-    // Send typing indicator
-    const socket = getSharedSocket();
-    if (socket) {
-      socket.emit('chat:typing', { senderId: getDeviceId(), typing: true });
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
-        socket.emit('chat:typing', { senderId: getDeviceId(), typing: false });
-      }, 2000);
-    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -226,7 +206,7 @@ export default function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
                       <ChatBubble
                         key={msg.id}
                         message={msg}
-                        isOwn={msg.senderId === getDeviceId()}
+                        isOwn={msg.senderId === myFingerprint}
                       />
                     ))
                   )}

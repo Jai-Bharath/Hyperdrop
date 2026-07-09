@@ -77,7 +77,7 @@ export default function WifiDirectModal({ isOpen, onClose }: WifiDirectModalProp
     const measurePing = async () => {
       try {
         const start = performance.now();
-        const res = await fetch(`http://${serverIp}:${serverPort || 3001}/healthz`, {
+        const res = await fetch(`http://${serverIp}:${serverPort || 53317}/healthz`, {
           signal: AbortSignal.timeout(2000),
         });
         if (res.ok) {

@@ -17,6 +17,8 @@ html {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   scroll-behavior: smooth;
+  /* Mobile-friendly overscroll */
+  overscroll-behavior-y: contain;
 }
 
 body {
@@ -25,6 +27,11 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   position: relative;
+  /* Momentum scrolling on iOS/Android WebView */
+  -webkit-overflow-scrolling: touch;
+  /* Safe areas for notched phones */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 #root {

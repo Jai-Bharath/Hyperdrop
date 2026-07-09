@@ -2,7 +2,8 @@ import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clipboard, Check, Copy, Trash2, Monitor, Smartphone, ArrowRight, ToggleLeft, ToggleRight, AlertTriangle, Type } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { getSharedSocket, getDeviceId } from '../hooks/useSocket';
+import { syncClipboard as httpSyncClipboard } from '../hooks/useLocalTransport';
+import { LOCAL_HTTP_PORT } from '../shared/protocol';
 
 export interface ClipboardEntryData {
   id: string;
@@ -53,18 +54,12 @@ export default function ClipboardSync({ isSidebar = false }: { isSidebar?: boole
   const sendClipboardContent = useCallback((text: string) => {
     if (!text.trim()) return;
 
-    const socket = getSharedSocket();
-    const deviceId = getDeviceId();
-    if (!socket) {
-      setClipboardError('Not connected to any device');
-      setTimeout(() => setClipboardError(null), 3000);
-      return;
-    }
+    const myFingerprint = localStorage.getItem('hyperdrop-fingerprint') || 'unknown';
 
     const entry: ClipboardEntryData = {
       id: `clip-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       content: text,
-      senderId: deviceId,
+      senderId: myFingerprint,
       senderName: 'You',
       source: 'local',
       timestamp: Date.now(),
@@ -72,9 +67,16 @@ export default function ClipboardSync({ isSidebar = false }: { isSidebar?: boole
     };
 
     addClipboardEntry(entry);
-    socket.emit('clipboard:sync', { ...entry, senderName: 'Peer' });
+
+    // Send to all connected peer devices via HTTP
+    for (const device of devices) {
+      httpSyncClipboard(device.ip, device.port || LOCAL_HTTP_PORT, text, 'text').catch((err) => {
+        console.warn('[ClipboardSync] Failed to sync to', device.name, err);
+      });
+    }
+
     setClipboardError(null);
-  }, [addClipboardEntry]);
+  }, [addClipboardEntry, devices]);
 
   const handleSendClipboard = useCallback(async () => {
     try {

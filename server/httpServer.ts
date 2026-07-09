@@ -1,5 +1,4 @@
-import express, { Express, Request, Response } from 'express'
-import { Server } from 'socket.io'
+import express, { Express, Request, Response, NextFunction } from 'express'
 import { join, basename } from 'path'
 import {
   existsSync,
@@ -9,15 +8,20 @@ import {
   createReadStream,
   statfsSync,
 } from 'fs'
-import { open, rename, FileHandle, unlink } from 'fs/promises'
+import { open, rename, FileHandle } from 'fs/promises'
 import { tmpdir } from 'os'
 import { networkInterfaces } from 'os'
 import cors from 'cors'
-import { activeTransfers } from './socketServer.js'
+import { randomBytes } from 'crypto'
+import type {
+  PrepareRequest, PrepareResponse, ChatMessage,
+  ClipboardPayload, ChatPollResponse, ClipboardPollResponse,
+  SessionStatus, DeviceInfo,
+} from '../src/shared/protocol.js'
+import { ENDPOINTS, SESSION_HEADER, CHUNK_SIZE as PROTOCOL_CHUNK_SIZE } from '../src/shared/protocol.js'
 
 // ─── Constants ────────────────────────────────────────────────────────
 const CHUNK_SIZE = 8 * 1024 * 1024 // 8 MB — must match client chunk size
-const MIN_FREE_BYTES = 1 * 1024 * 1024 * 1024 // 1 GB minimum free space
 
 /** Get free bytes on the drive containing the given path */
 function getFreeSpace(dirPath: string): number {
@@ -113,6 +117,19 @@ const transferMeta = new Map<string, { fileName: string; fileSize: number; total
 // Maps transferId → lock promise for serializing first-chunk init
 const initLocks = new Map<string, Promise<void>>()
 
+// Session tokens: sessionId → { token, expiresAt }
+const sessionTokens = new Map<string, { token: string; expiresAt: number }>()
+
+// ─── Consent queue ──────────────────────────────────────────────────
+// Pending consent requests: sessionId → { resolve, reject }
+interface ConsentWaiter {
+  resolve: (response: PrepareResponse) => void
+  reject: (reason: Error) => void
+  request: PrepareRequest
+  timestamp: number
+}
+const pendingConsents = new Map<string, ConsentWaiter>()
+
 export async function closeFileHandle(transferId: string): Promise<void> {
   const fh = fileHandlePool.get(transferId)
   if (fh) {
@@ -135,20 +152,62 @@ setInterval(() => {
       console.log(`[httpServer] Pruned stale transfer: ${id}`)
     }
   }
+  // Prune expired session tokens
+  for (const [id, session] of sessionTokens.entries()) {
+    if (now > session.expiresAt) {
+      sessionTokens.delete(id)
+    }
+  }
+  // Prune stale consents (30s timeout)
+  for (const [id, waiter] of pendingConsents.entries()) {
+    if (now - waiter.timestamp > 30000) {
+      waiter.reject(new Error('Consent timed out'))
+      pendingConsents.delete(id)
+    }
+  }
 }, 5 * 60 * 1000)
+
+// ─── Chat & Clipboard Buffers ────────────────────────────────────────
+interface StoredChat extends ChatMessage {
+  receivedAt: number
+}
+interface StoredClipboard extends ClipboardPayload {
+  receivedAt: number
+}
+
+const chatBuffer: StoredChat[] = []
+const clipboardBuffer: StoredClipboard[] = []
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 export function getLocalIp(): string {
   const nets = networkInterfaces()
+  const candidates: string[] = []
+
   for (const name of Object.keys(nets)) {
     const interfaces = nets[name]
     if (!interfaces) continue
+
+    const nameLower = name.toLowerCase()
+    const isVirtual = /virtual|vbox|vnet|vmnet|wsl|docker|dummy/i.test(nameLower)
+
     for (const iface of interfaces) {
       if (iface.internal) continue
-      if (iface.family === 'IPv4') return iface.address
+      if (iface.family === 'IPv4') {
+        if (!isVirtual) {
+          // If it's a known physical interface pattern (wi-fi, ethernet, wlan, eth, en, ep)
+          const isPhysical = /wifi|wlan|ethernet|eth|en|ep|wl/i.test(nameLower)
+          if (isPhysical) {
+            return iface.address // Prioritize physical immediately
+          }
+          candidates.unshift(iface.address) // Push other physical candidate to front
+        } else {
+          candidates.push(iface.address) // Push virtual candidate to the back
+        }
+      }
     }
   }
-  return '127.0.0.1'
+
+  return candidates.length > 0 ? candidates[0] : '127.0.0.1'
 }
 
 async function renameWithRetry(src: string, dest: string, retries = 10, delay = 100): Promise<void> {
@@ -184,13 +243,104 @@ function escapeHtml(unsafe: string): string {
     .replace(/'/g, '&#039;')
 }
 
+// ─── Session Auth Middleware ─────────────────────────────────────────
+// Rejects uploads without a valid session token issued during PrepareRequest.
+// This is the ENFORCING gate — tokens are issued in POST /api/transfer/prepare
+// and expire after 5 minutes of inactivity.
+function requireSession(req: Request, res: Response, next: NextFunction): void {
+  const token = (req.headers['x-hyperdrop-session'] as string)
+    || (req.headers[SESSION_HEADER.toLowerCase()] as string)
+
+  if (!token) {
+    console.warn(`[httpServer] Rejected upload — no session token (${req.method} ${req.path})`)
+    res.status(403).json({ error: 'Invalid or missing session token' })
+    return
+  }
+
+  // Find a matching, non-expired session
+  let matched = false
+  for (const [, session] of sessionTokens.entries()) {
+    if (session.token === token && Date.now() < session.expiresAt) {
+      // Refresh expiry on activity (sliding window)
+      session.expiresAt = Date.now() + 5 * 60 * 1000
+      matched = true
+      break
+    }
+  }
+
+  if (!matched) {
+    console.warn(`[httpServer] Rejected upload — invalid/expired session token (${req.method} ${req.path})`)
+    res.status(403).json({ error: 'Invalid or expired session token' })
+    return
+  }
+
+  next()
+}
+
 // ─── Setup ───────────────────────────────────────────────────────────
-export function setupHttpServer(app: Express, io: Server): void {
+export function setupHttpServer(app: Express, myFingerprint: string, myAlias: string): void {
   app.use(cors({ origin: '*' }))
   app.use(express.json())
 
-  // ── PUT /api/chunk — Raw binary chunk upload (no FormData overhead) ──
-  app.put('/api/chunk', async (req: Request, res: Response): Promise<void> => {
+  // ══════════════════════════════════════════════════════════════════
+  //  PROTOCOL ENDPOINTS (match native Kotlin/NanoHTTPD contract)
+  // ══════════════════════════════════════════════════════════════════
+
+  // ── GET /api/ping ─────────────────────────────────────────────────
+  app.get(ENDPOINTS.PING, (_req: Request, res: Response) => {
+    res.json({ status: 'ok' })
+  })
+
+  // ── GET /api/info ─────────────────────────────────────────────────
+  app.get(ENDPOINTS.INFO, (_req: Request, res: Response) => {
+    const info: DeviceInfo = {
+      alias: myAlias,
+      fingerprint: myFingerprint,
+      deviceType: 'desktop',
+      port: 53317,
+      version: '1.0',
+    }
+    res.json(info)
+  })
+
+  // ── POST /api/transfer/prepare — Consent handshake ────────────────
+  app.post(ENDPOINTS.PREPARE, async (req: Request, res: Response): Promise<void> => {
+    try {
+      const prepReq: PrepareRequest = req.body
+      if (!prepReq.sessionId || !prepReq.files) {
+        res.status(400).json({ error: 'Invalid PrepareRequest' })
+        return
+      }
+
+      console.log(`[httpServer] Transfer request from ${prepReq.senderAlias}: ${prepReq.files.length} file(s)`)
+
+      // For desktop companion: auto-accept (no consent UI in terminal mode)
+      // In a GUI desktop app, this would show a consent dialog
+      const sessionToken = randomBytes(32).toString('hex')
+      sessionTokens.set(prepReq.sessionId, {
+        token: sessionToken,
+        expiresAt: Date.now() + 5 * 60 * 1000, // 5 minute expiry
+      })
+
+      const acceptedIds = prepReq.files.map(f => f.id)
+
+      const prepRes: PrepareResponse = {
+        sessionId: prepReq.sessionId,
+        accepted: true,
+        acceptedFileIds: acceptedIds,
+        sessionToken,
+      }
+
+      res.json(prepRes)
+    } catch (err) {
+      console.error('[httpServer] Prepare error:', err)
+      res.status(500).json({ error: 'Prepare failed' })
+    }
+  })
+
+  // ── PUT /api/chunk — Raw binary chunk upload ──────────────────────
+  // requireSession middleware enforces valid session token BEFORE handler runs
+  app.put(ENDPOINTS.UPLOAD_CHUNK, requireSession, async (req: Request, res: Response): Promise<void> => {
     try {
       const transferId = req.headers['x-transfer-id'] as string
       const chunkIndexStr = req.headers['x-chunk-index'] as string
@@ -265,7 +415,6 @@ export function setupHttpServer(app: Express, io: Server): void {
       // ── Write at exact byte offset ──
       let fh = fileHandlePool.get(transferId)
       if (!fh) {
-        // Re-open if handle was lost (shouldn't happen but be safe)
         fh = await open(partPath, 'r+')
         fileHandlePool.set(transferId, fh)
       }
@@ -273,20 +422,8 @@ export function setupHttpServer(app: Express, io: Server): void {
       await fh.write(body, 0, body.length, offset)
       received.add(chunkIdx)
 
-      // ── Emit progress (targeted to receiver only) ──
-      const transferred = Math.min(received.size * CHUNK_SIZE, fileSize)
-      const mapping = activeTransfers.get(transferId)
-      if (mapping) {
-        io.to(mapping.receiverSocketId).emit('transfer:progress', {
-          id: transferId,
-          transferred,
-          speed: 0, // Client calculates its own speed
-        })
-      }
-
       // ── Check completion ──
       if (received.size === totalChunks) {
-        // Close handle BEFORE rename
         const completedHandle = fileHandlePool.get(transferId)
         if (completedHandle) {
           await completedHandle.close()
@@ -302,20 +439,6 @@ export function setupHttpServer(app: Express, io: Server): void {
         initLocks.delete(transferId)
 
         console.log(`[httpServer] Transfer complete: ${fileName} (${formatBytes(fileSize)})`)
-
-        // Emit transfer:done to both sender and receiver for reliability
-        const doneMapping = activeTransfers.get(transferId)
-        if (doneMapping) {
-          const donePayload = {
-            id: transferId,
-            fileName,
-            fileSize,
-            downloadUrl: `/download/${encodeURIComponent(fileName)}`,
-          }
-          io.to(doneMapping.receiverSocketId).emit('transfer:done', donePayload)
-          io.to(doneMapping.senderSocketId).emit('transfer:done', donePayload)
-          console.log(`[httpServer] transfer:done emitted to receiver(${doneMapping.receiverSocketId}) and sender(${doneMapping.senderSocketId})`)
-        }
 
         res.json({ status: 'complete', fileName, progress: 100 })
         return
@@ -334,14 +457,43 @@ export function setupHttpServer(app: Express, io: Server): void {
     }
   })
 
-  // Also handle POST for backward compat (multipart FormData from old clients)
-  // This is a minimal shim — new clients use PUT with raw binary
-  app.post('/api/chunk', express.raw({ type: 'application/octet-stream', limit: '20mb' }), async (req: Request, res: Response): Promise<void> => {
-    // Redirect to PUT handler logic — but for now just return error telling client to use PUT
+  // Also handle POST for backward compat
+  app.post(ENDPOINTS.UPLOAD_CHUNK, express.raw({ type: 'application/octet-stream', limit: '20mb' }), async (_req: Request, res: Response): Promise<void> => {
     res.status(400).json({ error: 'Use PUT /api/chunk with raw binary body' })
   })
 
-  // ── GET /api/resume/:transferId — query received chunks for resume ──
+  // ── GET /api/session/:id/status — resume state ────────────────────
+  app.get(`${ENDPOINTS.SESSION_STATUS}/:sessionId/status`, (req: Request, res: Response) => {
+    const { sessionId } = req.params
+    const received = transferState.get(sessionId)
+    const meta = transferMeta.get(sessionId)
+
+    if (!received) {
+      const status: SessionStatus = {
+        sessionId,
+        receivedChunks: [],
+        totalChunks: 0,
+        totalReceived: 0,
+        totalSize: 0,
+        status: 'unknown' as any,
+      }
+      res.json(status)
+      return
+    }
+
+    const receivedArr = Array.from(received)
+    const status: SessionStatus = {
+      sessionId,
+      receivedChunks: receivedArr,
+      totalChunks: meta?.totalChunks ?? 0,
+      totalReceived: Math.min(receivedArr.length * CHUNK_SIZE, meta?.fileSize ?? 0),
+      totalSize: meta?.fileSize ?? 0,
+      status: 'active',
+    }
+    res.json(status)
+  })
+
+  // ── GET /api/resume/:transferId — backward compat resume query ────
   app.get('/api/resume/:transferId', (req: Request, res: Response) => {
     const { transferId } = req.params
     const received = transferState.get(transferId)
@@ -355,8 +507,9 @@ export function setupHttpServer(app: Express, io: Server): void {
     })
   })
 
-  // ── POST /api/upload-stream — raw streaming for single-file upload ──
-  app.post('/api/upload-stream', async (req: Request, res: Response): Promise<void> => {
+  // ── POST /api/upload-stream — raw streaming ───────────────────────
+  // requireSession middleware enforces valid session token BEFORE handler runs
+  app.post(ENDPOINTS.UPLOAD_STREAM, requireSession, async (req: Request, res: Response): Promise<void> => {
     const fileName = req.headers['x-file-name'] as string
     const transferId = req.headers['x-transfer-id'] as string
     const fileSizeStr = req.headers['x-file-size'] as string
@@ -375,7 +528,6 @@ export function setupHttpServer(app: Express, io: Server): void {
 
       console.log(`[httpServer] Raw stream upload: ${decodedFileName} (${formatBytes(fileSize)})`)
 
-      // Pre-allocate and open for writing
       fh = await open(partPath, 'w')
       await fh.truncate(fileSize)
       await fh.close()
@@ -384,79 +536,114 @@ export function setupHttpServer(app: Express, io: Server): void {
       transferLastSeen.set(transferId, Date.now())
 
       let receivedBytes = 0
-      let lastProgressTime = Date.now()
 
       for await (const chunk of req) {
         const buf = chunk as Buffer
         await fh.write(buf, 0, buf.length, receivedBytes)
         receivedBytes += buf.length
-
-        const now = Date.now()
-        if (now - lastProgressTime > 200) {
-          lastProgressTime = now
-          transferLastSeen.set(transferId, now)
-          const streamMapping = activeTransfers.get(transferId)
-          if (streamMapping) {
-            io.to(streamMapping.receiverSocketId).emit('transfer:progress', {
-              id: transferId,
-              transferred: receivedBytes,
-              speed: 0,
-            })
-          }
-        }
       }
 
       await fh.close()
       fh = null
       await renameWithRetry(partPath, finalPath)
-
       transferLastSeen.delete(transferId)
 
-      const streamDoneMapping = activeTransfers.get(transferId)
-      if (streamDoneMapping) {
-        io.to(streamDoneMapping.receiverSocketId).emit('transfer:progress', { id: transferId, transferred: fileSize, speed: 0 })
-        io.to(streamDoneMapping.receiverSocketId).emit('transfer:done', {
-          id: transferId,
-          fileName: decodedFileName,
-          fileSize,
-          downloadUrl: `/download/${encodeURIComponent(decodedFileName)}`,
-        })
-      }
-
+      console.log(`[httpServer] Stream upload complete: ${decodedFileName} (${formatBytes(fileSize)})`)
       res.json({ status: 'complete', fileName: decodedFileName })
     } catch (err) {
       console.error('[httpServer] Raw upload error:', err)
       if (fh) {
         try { await fh.close() } catch { /* ignore */ }
       }
-      io.emit('transfer:error', { id: transferId, error: 'Upload stream failed' })
       if (!res.headersSent) {
         res.status(500).json({ error: 'Upload failed', details: String(err) })
       }
     }
   })
 
-  // ── GET /api/info — server metadata ─────────────────────────────
-  app.get('/api/info', (_req: Request, res: Response) => {
-    res.json({
-      ip: getLocalIp(),
-      port: 3001,
-      ftpPort: 2121,
-    })
+  // ══════════════════════════════════════════════════════════════════
+  //  CHAT ENDPOINTS
+  // ══════════════════════════════════════════════════════════════════
+
+  // ── POST /api/chat/send ───────────────────────────────────────────
+  app.post(ENDPOINTS.CHAT_SEND, (req: Request, res: Response) => {
+    try {
+      const msg: ChatMessage = req.body
+      chatBuffer.push({ ...msg, receivedAt: Date.now() })
+      // Keep last 200 messages
+      while (chatBuffer.length > 200) chatBuffer.shift()
+      console.log(`[chat] Message from ${msg.senderAlias || msg.senderFingerprint?.slice(0, 8)}: ${msg.text?.slice(0, 50)}`)
+      res.json({ status: 'ok' })
+    } catch (err) {
+      res.status(400).json({ error: 'Invalid chat message' })
+    }
   })
 
-  // ── GET /api/devices — discovered LAN devices ──────────────────
+  // ── GET /api/chat/poll ────────────────────────────────────────────
+  app.get(ENDPOINTS.CHAT_POLL, (req: Request, res: Response) => {
+    const since = parseInt(req.query.since as string, 10) || 0
+    const messages = chatBuffer.filter(m => m.timestamp > since)
+    const response: ChatPollResponse = {
+      messages,
+      serverTime: Date.now(),
+    }
+    res.json(response)
+  })
+
+  // ══════════════════════════════════════════════════════════════════
+  //  CLIPBOARD ENDPOINTS
+  // ══════════════════════════════════════════════════════════════════
+
+  // ── POST /api/clipboard/sync ──────────────────────────────────────
+  app.post(ENDPOINTS.CLIPBOARD_SYNC, (req: Request, res: Response) => {
+    try {
+      const entry: ClipboardPayload = req.body
+      clipboardBuffer.push({ ...entry, receivedAt: Date.now() })
+      while (clipboardBuffer.length > 50) clipboardBuffer.shift()
+      console.log(`[clipboard] Sync from ${entry.senderAlias || entry.senderFingerprint?.slice(0, 8)}: ${entry.content?.slice(0, 30)}`)
+      res.json({ status: 'ok' })
+    } catch (err) {
+      res.status(400).json({ error: 'Invalid clipboard payload' })
+    }
+  })
+
+  // ── GET /api/clipboard/poll ───────────────────────────────────────
+  app.get(ENDPOINTS.CLIPBOARD_POLL, (req: Request, res: Response) => {
+    const since = parseInt(req.query.since as string, 10) || 0
+    const entries = clipboardBuffer.filter(e => e.timestamp > since)
+    const response: ClipboardPollResponse = {
+      entries,
+      serverTime: Date.now(),
+    }
+    res.json(response)
+  })
+
+  // ══════════════════════════════════════════════════════════════════
+  //  DEVICES — aggregated multicast + mDNS peers
+  // ══════════════════════════════════════════════════════════════════
+
   app.get('/api/devices', async (_req: Request, res: Response) => {
     try {
       const { getDiscoveredDevices } = await import('./discovery.js')
       const mDnsDevices = getDiscoveredDevices()
 
-      const { socketDevicesMap } = await import('./socketServer.js')
-      const socketDevices = Array.from(socketDevicesMap.values())
+      const { getMulticastPeers } = await import('./index.js')
+      const multicastPeers = getMulticastPeers()
 
+      // Merge — multicast peers take precedence (newer protocol)
       const allDevicesMap = new Map<string, any>()
       for (const d of mDnsDevices) allDevicesMap.set(d.id, d)
-      for (const d of socketDevices) allDevicesMap.set(d.id, d)
+      for (const p of multicastPeers) {
+        allDevicesMap.set(p.fingerprint, {
+          id: p.fingerprint,
+          name: p.alias,
+          ip: p.ip,
+          port: p.port,
+          platform: p.deviceType,
+          lastSeen: p.lastSeen,
+          source: 'multicast',
+        })
+      }
 
       res.json(Array.from(allDevicesMap.values()))
     } catch (err) {
@@ -465,11 +652,14 @@ export function setupHttpServer(app: Express, io: Server): void {
     }
   })
 
+  // ══════════════════════════════════════════════════════════════════
+  //  FILE DOWNLOAD + BROWSE (unchanged from original)
+  // ══════════════════════════════════════════════════════════════════
+
   // ── GET /download/:file — stream a file to the client ──────────
   app.get('/download/:file', (req: Request, res: Response) => {
     try {
       const fileName = decodeURIComponent(req.params.file)
-      const transferId = req.query.transferId as string
       const safeFileName = basename(fileName)
       const filePath = join(DOWNLOADS_DIR, safeFileName)
 
@@ -518,8 +708,6 @@ export function setupHttpServer(app: Express, io: Server): void {
         if (!res.headersSent) res.status(500).send('Read failed')
       })
 
-      // Don't emit transfer:done here — it's already emitted when the upload
-      // completes in the chunk/stream handlers. This endpoint is just for downloads.
       res.on('finish', () => {
         // no-op: download served successfully
       })
@@ -550,7 +738,7 @@ export function setupHttpServer(app: Express, io: Server): void {
         .map((f) => {
           const escapedName = escapeHtml(f.name)
           return `<tr>
-            <td><a href="http://${ip}:3001/download/${encodeURIComponent(f.name)}">${escapedName}</a></td>
+            <td><a href="http://${ip}:53317/download/${encodeURIComponent(f.name)}">${escapedName}</a></td>
             <td>${formatBytes(f.size)}</td>
             <td>${f.modified.toLocaleString()}</td>
           </tr>`

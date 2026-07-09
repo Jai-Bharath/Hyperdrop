@@ -1,27 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, AlertTriangle, Check } from 'lucide-react';
+import { X, Camera, AlertTriangle, Check, Loader2 } from 'lucide-react';
 import jsQR from 'jsqr';
-import { useStore } from '../store/useStore';
-import { joinPairingRoom } from '../hooks/useSocket';
 
 interface WebQRScannerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: (msg: string) => void;
+  onDeviceFound?: (ip: string, port: number) => void;
 }
 
-export default function WebQRScanner({ isOpen, onClose, onSuccess }: WebQRScannerProps) {
+/**
+ * QR Code Scanner — scans for `hyperdrop://IP:PORT` URLs.
+ * Uses the device camera + jsQR library for decoding.
+ */
+export default function WebQRScanner({ isOpen, onClose, onDeviceFound }: WebQRScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const tickRef = useRef<(() => void) | null>(null);
-  
+
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [permissionState, setPermissionState] = useState<'prompt' | 'granted' | 'denied'>('prompt');
-  
-  const setSocketUrl = useStore((s) => s.setSocketUrl);
+  const [isStarting, setIsStarting] = useState(true);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -32,264 +31,224 @@ export default function WebQRScanner({ isOpen, onClose, onSuccess }: WebQRScanne
     const startCamera = async () => {
       setCameraError(null);
       setSuccessMsg(null);
+      setIsStarting(true);
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
         });
-        
+
         if (!active) {
           stream.getTracks().forEach(track => track.stop());
           return;
         }
 
         streamRef.current = stream;
-        setPermissionState('granted');
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.setAttribute('playsinline', 'true');
-          void videoRef.current.play();
-          
-          // Start the decode loop
-          animationFrameId = requestAnimationFrame(tick);
+          await videoRef.current.play();
+          setIsStarting(false);
+          scanLoop();
         }
-      } catch (err: any) {
-        console.error('[WebQRScanner] Camera access failed:', err);
-        setPermissionState('denied');
-        setCameraError(
-          err.name === 'NotAllowedError' 
-            ? 'Camera permission denied. Please allow camera access in your browser settings.'
-            : 'Failed to access camera. Please make sure no other app is using it.'
-        );
+      } catch (err) {
+        console.error('[QR] Camera error:', err);
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        if (msg.includes('NotAllowed') || msg.includes('Permission')) {
+          setCameraError('Camera permission denied. Please allow camera access in your device settings.');
+        } else {
+          setCameraError(`Cannot access camera: ${msg}`);
+        }
+        setIsStarting(false);
       }
     };
 
-    const tick = () => {
-      if (!active || !videoRef.current || !canvasRef.current) return;
+    const scanLoop = () => {
+      if (!active) return;
 
       const video = videoRef.current;
       const canvas = canvasRef.current;
+      if (!video || !canvas || video.readyState < 2) {
+        animationFrameId = requestAnimationFrame(scanLoop);
+        return;
+      }
+
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        animationFrameId = requestAnimationFrame(scanLoop);
+        return;
+      }
 
-      if (video.readyState === video.HAVE_ENOUGH_DATA && ctx) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
-        });
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
 
-        if (code) {
-          console.log('[WebQRScanner] Decoded QR code:', code.data);
-          handleQRCode(code.data);
-          return; // Stop scan loop on success
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      });
+
+      if (code && code.data) {
+        const parsed = parseQRData(code.data);
+        if (parsed) {
+          setSuccessMsg(`Found: ${parsed.ip}:${parsed.port}`);
+          onDeviceFound?.(parsed.ip, parsed.port);
+
+          // Stop scanning after success
+          setTimeout(() => {
+            onClose();
+          }, 1200);
+          return; // Stop scan loop
         }
       }
 
-      animationFrameId = requestAnimationFrame(tick);
+      animationFrameId = requestAnimationFrame(scanLoop);
     };
 
-    tickRef.current = tick;
-
-    void startCamera();
+    startCamera();
 
     return () => {
       active = false;
-      tickRef.current = null;
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen, onClose, onDeviceFound]);
 
-  const handleQRCode = (data: string) => {
-    try {
-      // Check if it's a HyperDrop pairing URL
-      // Formats:
-      // 1. hyperdrop://pair?room=XXXXXX
-      // 2. http://10.196.102.8:3001
-      // 3. https://hyperdrop.net/pair?room=XXXXXX
-      
-      let matched = false;
-      let room = '';
-
-      if (data.startsWith('hyperdrop://')) {
-        const url = new URL(data.replace('hyperdrop://', 'http://'));
-        room = url.searchParams.get('room') || '';
-        matched = true;
-      } else if (data.startsWith('http://') || data.startsWith('https://')) {
-        const url = new URL(data);
-        room = url.searchParams.get('room') || '';
-        
-        // If it's a direct local address (e.g. http://10.196.102.8:3001), set local Socket URL
-        const isDirectIpPort = /:\d+/.test(url.host) || /^(192\.168\.|10\.|172\.)/.test(url.hostname);
-        if (isDirectIpPort && !room) {
-          const cleanSocketUrl = `${url.protocol}//${url.host}`;
-          setSocketUrl(cleanSocketUrl);
-          console.log(`[WebQRScanner] Switched local signaling target directly to: ${cleanSocketUrl}`);
-          setSuccessMsg('Successfully connected to Laptop!');
-          matched = true;
-        } else if (room) {
-          matched = true;
-        }
-      }
-
-      if (matched) {
-        // Trigger haptic rumble feedback if browser supports it
-        if ('vibrate' in navigator) {
-          navigator.vibrate(100);
-        }
-
-        if (room) {
-          joinPairingRoom(room);
-          setSuccessMsg(`Joined room ${room} successfully!`);
-        }
-
-        setTimeout(() => {
-          if (onSuccess) {
-            onSuccess(room ? `Room ${room} Paired` : 'Laptop Connected');
-          }
-          onClose();
-        }, 1200);
-      } else {
-        // Not a HyperDrop QR code
-        console.warn('[WebQRScanner] Scanned code is not a valid HyperDrop connection:', data);
-        // Continue scanning after a short delay
-        setTimeout(() => {
-          if (isOpen && streamRef.current) {
-            requestAnimationFrame(() => {
-              if (videoRef.current && tickRef.current) {
-                // Restart frame loop
-                requestAnimationFrame(tickRef.current);
-              }
-            });
-          }
-        }, 1500);
-      }
-    } catch (err) {
-      console.error('[WebQRScanner] Failed parsing scanned URL:', err);
-    }
-  };
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+      >
         <motion.div
-          id="qr-scanner-backdrop"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          className="relative w-full max-w-sm rounded-3xl bg-[#141420] border border-white/10 overflow-hidden shadow-2xl"
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.9, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Dark Backdrop with blur */}
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
-
-          {/* Scanner Container */}
-          <motion.div
-            id="qr-scanner-modal"
-            className="glass-strong relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 p-6 shadow-2xl"
-            initial={{ scale: 0.95, y: 16 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 16 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Camera className="h-5 w-5 text-brand-400" />
-                <h2 className="text-base font-bold text-slate-100">Scan QR Code</h2>
-              </div>
-              <button
-                id="close-scanner"
-                type="button"
-                onClick={onClose}
-                className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-slate-300 transition-colors"
-                aria-label="Close Scanner"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-brand-400" />
+              <h3 className="text-sm font-bold text-slate-200">Scan QR Code</h3>
             </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl hover:bg-white/10 text-slate-400 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-            {/* Viewport Area */}
-            <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-black border border-white/5 shadow-inner">
-              {/* Invisible helper canvas and camera stream */}
-              <canvas ref={canvasRef} className="hidden" />
-              
-              {permissionState === 'granted' && !successMsg && (
-                <video
-                  ref={videoRef}
-                  className="h-full w-full object-cover transform"
-                />
-              )}
+          {/* Camera viewport */}
+          <div className="relative aspect-square bg-black">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              playsInline
+              muted
+            />
+            <canvas ref={canvasRef} className="hidden" />
 
-              {/* Glowing Laser target overlays */}
-              {permissionState === 'granted' && !successMsg && (
-                <>
-                  {/* Frosted vignette */}
-                  <div className="absolute inset-0 border-[24px] border-black/40 pointer-events-none" />
-                  
-                  {/* Glowing Box */}
-                  <div className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 border-2 border-brand-400/80 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.3)] pointer-events-none">
-                    {/* Laser Target line */}
-                    <div className="absolute left-0 right-0 h-[2px] bg-brand-400 shadow-[0_0_8px_#8b5cf6] animate-laser" />
-                  </div>
-                </>
-              )}
+            {/* Scanning overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-56 h-56 border-2 border-brand-400/50 rounded-2xl relative">
+                {/* Corner markers */}
+                <div className="absolute -top-0.5 -left-0.5 w-6 h-6 border-t-2 border-l-2 border-brand-400 rounded-tl-lg" />
+                <div className="absolute -top-0.5 -right-0.5 w-6 h-6 border-t-2 border-r-2 border-brand-400 rounded-tr-lg" />
+                <div className="absolute -bottom-0.5 -left-0.5 w-6 h-6 border-b-2 border-l-2 border-brand-400 rounded-bl-lg" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 border-b-2 border-r-2 border-brand-400 rounded-br-lg" />
 
-              {/* Success Overlay */}
-              {successMsg && (
+                {/* Scan line animation */}
                 <motion.div
-                  className="absolute inset-0 flex flex-col items-center justify-center bg-brand-500/20 backdrop-blur-sm text-center p-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-brand-400 to-transparent"
+                  animate={{ top: ['10%', '90%', '10%'] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              </div>
+            </div>
+
+            {/* Loading state */}
+            {isStarting && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                <Loader2 className="h-8 w-8 text-brand-400 animate-spin" />
+                <p className="mt-3 text-xs text-slate-400">Starting camera…</p>
+              </div>
+            )}
+
+            {/* Error state */}
+            {cameraError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 px-6">
+                <AlertTriangle className="h-8 w-8 text-amber-400" />
+                <p className="mt-3 text-xs text-slate-300 text-center">{cameraError}</p>
+              </div>
+            )}
+
+            {/* Success state */}
+            {successMsg && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mb-3 border border-emerald-500/30">
-                    <Check className="h-7 w-7" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-100">{successMsg}</p>
+                  <Check className="h-12 w-12 text-emerald-400" />
                 </motion.div>
-              )}
+                <p className="mt-3 text-sm font-bold text-emerald-300">{successMsg}</p>
+              </div>
+            )}
+          </div>
 
-              {/* Permission/Error State */}
-              {permissionState !== 'granted' && !successMsg && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-400">
-                  {permissionState === 'prompt' && (
-                    <>
-                      <Camera className="h-10 w-10 text-brand-400/50 mb-3 animate-pulse" />
-                      <p className="text-xs font-semibold text-slate-300">Requesting Camera Permission</p>
-                      <p className="text-[10px] text-slate-500 mt-1 max-w-xs">
-                        Please tap "Allow" when prompted by your browser to scan the QR code.
-                      </p>
-                    </>
-                  )}
-
-                  {permissionState === 'denied' && (
-                    <div className="space-y-2.5">
-                      <AlertTriangle className="h-10 w-10 text-amber-500/80 mx-auto" />
-                      <p className="text-xs font-semibold text-slate-300">Camera Access Denied</p>
-                      <p className="text-[10px] text-slate-500 leading-relaxed max-w-xs px-2">
-                        {cameraError}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Instruction Footer */}
-            <div className="mt-4 text-center">
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Scan the **Pair Device** QR Code displayed on the laptop to connect instantly.
-              </p>
-            </div>
-          </motion.div>
+          {/* Footer hint */}
+          <div className="px-5 py-3 text-center border-t border-white/[0.06]">
+            <p className="text-[10px] text-slate-500">
+              Point camera at the QR code shown on the receiver's device
+            </p>
+          </div>
         </motion.div>
-      )}
+      </motion.div>
     </AnimatePresence>
   );
+}
+
+/**
+ * Parse QR data. Accepts:
+ * - hyperdrop://192.168.43.1:53317
+ * - http://192.168.43.1:53317
+ * - 192.168.43.1:53317
+ * - 192.168.43.1
+ */
+function parseQRData(data: string): { ip: string; port: number } | null {
+  const cleaned = data.trim();
+
+  // Try hyperdrop:// protocol
+  const hdMatch = cleaned.match(/^hyperdrop:\/\/([^/:]+)(?::(\d+))?/);
+  if (hdMatch) {
+    return { ip: hdMatch[1], port: parseInt(hdMatch[2] || '53317', 10) };
+  }
+
+  // Try http:// URL
+  const httpMatch = cleaned.match(/^https?:\/\/([^/:]+)(?::(\d+))?/);
+  if (httpMatch) {
+    return { ip: httpMatch[1], port: parseInt(httpMatch[2] || '53317', 10) };
+  }
+
+  // Try plain IP:port
+  const ipPortMatch = cleaned.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::(\d+))?$/);
+  if (ipPortMatch) {
+    return { ip: ipPortMatch[1], port: parseInt(ipPortMatch[2] || '53317', 10) };
+  }
+
+  return null;
 }

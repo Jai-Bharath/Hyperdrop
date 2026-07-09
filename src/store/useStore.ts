@@ -40,6 +40,7 @@ export interface Transfer {
   targetDeviceId?: string;
   relativePath?: string;
   blobUrl?: string;
+  deviceName?: string;
 }
 
 export interface HistoryEntry {
@@ -157,7 +158,7 @@ export const useStore = create<HyperDropState>()(
       // Initial state
       connected: false,
       serverIp: '',
-      serverPort: 3001,
+      serverPort: 53317,
       ftpPort: 2121,
       socketUrl: '',
       apiBaseUrl: '',
