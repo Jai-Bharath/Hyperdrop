@@ -645,6 +645,20 @@ export function setupHttpServer(app: Express, myFingerprint: string, myAlias: st
         })
       }
 
+      // Merge Socket.IO registered devices (useful for web-to-web / normal ↔ incognito discovery)
+      const { socketDevicesMap } = await import('./socketServer.js')
+      for (const [id, dev] of socketDevicesMap.entries()) {
+        allDevicesMap.set(id, {
+          id,
+          name: dev.name,
+          ip: dev.ip === '127.0.0.1' || dev.ip === '::1' ? 'localhost' : dev.ip,
+          port: dev.port,
+          platform: dev.platform,
+          lastSeen: dev.lastSeen,
+          source: 'socket',
+        })
+      }
+
       res.json(Array.from(allDevicesMap.values()))
     } catch (err) {
       console.error('[httpServer] Failed to get devices:', err)
