@@ -302,8 +302,53 @@ export async function initializeDiscovery(): Promise<void> {
     }
   } else {
     // ─── WEB PATH ──────────────────────────────────────
+    // Works like LocalSend: discover local IP via WebRTC STUN,
+    // then scan the entire LAN subnet for HyperDrop devices.
     useStore.getState().setConnected(true);
 
+    // Step 1: Discover our own LAN IP using WebRTC (no cloud needed)
+    const discoverLocalIp = (): Promise<string> =>
+      new Promise((resolve) => {
+        try {
+          const pc = new RTCPeerConnection({
+            iceServers: [], // No STUN — just local candidates
+          });
+          pc.createDataChannel('');
+          pc.createOffer().then((offer) => pc.setLocalDescription(offer));
+
+          const timeout = setTimeout(() => {
+            pc.close();
+            resolve('');
+          }, 3000);
+
+          pc.onicecandidate = (e) => {
+            if (!e.candidate) return;
+            const match = e.candidate.candidate.match(
+              /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/
+            );
+            if (match && !match[1].startsWith('0.') && match[1] !== '0.0.0.0') {
+              const ip = match[1];
+              // Only accept private IPs
+              if (
+                ip.startsWith('192.168.') ||
+                ip.startsWith('10.') ||
+                /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)
+              ) {
+                clearTimeout(timeout);
+                pc.close();
+                resolve(ip);
+              }
+            }
+          };
+        } catch {
+          resolve('');
+        }
+      });
+
+    myIp = await discoverLocalIp();
+    console.log(`[discovery] Web: detected local IP: ${myIp || '(none)'}`);
+
+    // Step 2: Try companion server (fast path — already running on same machine)
     const tryLocalCompanion = async () => {
       try {
         const res = await fetch(`http://localhost:${LOCAL_HTTP_PORT}/api/devices`, {
@@ -317,12 +362,36 @@ export async function initializeDiscovery(): Promise<void> {
             if (device) useStore.getState().addDevice(device);
           }
         }
-      } catch { /* No companion */ }
+      } catch { /* No companion — not an error, subnet scan handles it */ }
     };
 
     await tryLocalCompanion();
     setInterval(tryLocalCompanion, 5000);
+
+    // Step 3: Subnet scan — find ALL HyperDrop devices on the LAN
+    // This is how LocalSend/Quick Share discover peers without a central server
+    if (myIp) {
+      scanning = true;
+      await scanSubnet(getSubnetBase(myIp), myIp, LOCAL_HTTP_PORT);
+      scanning = false;
+    } else {
+      // Fallback: try common subnets
+      console.log('[discovery] No local IP detected, trying common subnets...');
+      scanning = true;
+      await scanSubnet('192.168.1', '', LOCAL_HTTP_PORT);
+      await scanSubnet('192.168.0', '', LOCAL_HTTP_PORT);
+      scanning = false;
+    }
+
+    // Step 4: Periodic re-verify + rescan
     setInterval(reverifyPeers, 20000);
+    setInterval(async () => {
+      if (myIp && !scanning) {
+        scanning = true;
+        await scanSubnet(getSubnetBase(myIp), myIp, LOCAL_HTTP_PORT);
+        scanning = false;
+      }
+    }, 45000);
   }
 
   console.log('[discovery] Initialization complete');
