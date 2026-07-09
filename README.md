@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=200&section=header&text=⚡%20HyperDrop&fontSize=72&fontColor=ffffff&fontAlignY=40&desc=Browser-to-Browser%20File%20Transfer%20•%20No%20App%20•%20No%20Cloud%20•%20No%20Limits&descAlignY=65&descSize=18&descColor=a78bfa" width="100%" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=200&section=header&text=⚡%20HyperDrop&fontSize=72&fontColor=ffffff&fontAlignY=40&desc=Cross-Platform%20File%20Transfer%20•%20No%20Cloud%20•%20No%20Limits&descAlignY=65&descSize=18&descColor=a78bfa" width="100%" />
 
 <br/>
 
@@ -12,7 +12,7 @@
 
 <br/>
 
-> **Open a browser. Select a file. Transfer it to any device at full WiFi speed. No app to install. No account to create. No file ever touches a server.**
+> **Transfer files between any devices — phone to laptop, laptop to phone — at full WiFi speed. No cloud. No accounts. No file size limits. Works in the browser and as a native Android app.**
 
 <br/>
 
@@ -22,22 +22,27 @@
 
 ## ⚡ What is HyperDrop?
 
-HyperDrop is a **browser-based file transfer app** that sends files **directly between devices** using WebRTC peer-to-peer data channels. Both devices just open the website — file data flows directly over your WiFi, never through any cloud server.
+HyperDrop is a **cross-platform file transfer app** with two complementary modes:
+
+- **🌐 Web Version** — Open the website in any browser. Files transfer directly via **WebRTC peer-to-peer** data channels. No installation required.
+- **📱 Android App** — A native Capacitor-powered APK with an embedded **Kotlin HTTP server** for blazing-fast LAN transfers via parallel HTTP streams.
+
+Both versions can talk to each other. A phone running the APK can send files to a laptop running the website — and vice versa.
 
 ```
-📱 Your Phone                              💻 Your Laptop
+📱 Android App (APK)                       💻 Laptop Browser
+   │  Kotlin HTTP Server (port 53317)         │
+   │  UDP Multicast Discovery                 │  Socket.IO + WebRTC
    │                                          │
-   ├─ Opens hyperdrop.vercel.app              ├─ Opens hyperdrop.vercel.app
+   │   ◄──── LAN Direct HTTP ────►            │   ◄──── WebRTC P2P ────►
+   │         100–300 MB/s                      │         30–80 MB/s
    │                                          │
-   ├─ Sees laptop in device list              │
-   │                                          │
-   │      WebRTC Data Channel (P2P)           │
-   ├──────── File goes DIRECTLY ─────────────►│
-   │         over WiFi • 30-80 MB/s           │
-   │                                          ├─ File auto-downloads ✅
+   ├── Chat messages (offline sync) ──────────┤
+   ├── Clipboard sync ────────────────────────┤
+   └── Trusted device auto-accept ────────────┘
 ```
 
-**No server handles your files.** The cloud server (Render) only connects the two browsers — like a phone switchboard that connects calls but never hears the conversation.
+**No server ever touches your files.** The signaling server only connects devices — like a phone switchboard that connects calls but never hears the conversation.
 
 ---
 
@@ -45,20 +50,21 @@ HyperDrop is a **browser-based file transfer app** that sends files **directly b
 
 | Feature | HyperDrop | AirDrop | Quick Share | SHAREit | LocalSend |
 |---|:---:|:---:|:---:|:---:|:---:|
-| **No app install needed** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Native Android app** | ✅ Capacitor | ❌ | ✅ | ✅ | ✅ |
+| **No app install needed (web)** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Native Android app** | ✅ Capacitor + Kotlin | ❌ | ✅ | ✅ | ✅ |
 | **Works on any device/OS** | ✅ | ❌ Apple only | ❌ Android only | Partial | Partial |
 | **Files never touch a server** | ✅ | ✅ | ✅ | ❌ (ads/telemetry) | ✅ |
-| **Works offline (PWA)** | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Built-in chat** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Clipboard sync** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Trusted devices (auto-accept)** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Audio notifications** | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Drag & drop folders** | ✅ | ✅ | ❌ | ❌ | ✅ |
 | **Background transfer** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Retry / Resume** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Cross-network pairing** | ✅ QR/Code | ❌ | ❌ | ❌ | ❌ |
+| **Cross-network QR pairing** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Zero accounts / login** | ✅ | ❌ Apple ID | ❌ Google | ❌ phone no. | ✅ |
 | **Zero data collection** | ✅ | ❌ | ❌ | ❌ spyware | ✅ |
 | **Built-in FTP server** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Page reload protection** | ✅ | N/A | N/A | N/A | N/A |
-
-> SHAREit was [caught sending user data to Chinese servers](https://www.mcafee.com/blogs/other-blogs/mcafee-labs/shareit-application-vulnerabilities/). HyperDrop contains **zero telemetry code** — not blocked, simply absent.
 
 ---
 
@@ -68,23 +74,23 @@ HyperDrop is a **browser-based file transfer app** that sends files **directly b
 
 | Mode | When | How | Speed |
 |---|---|---|:---:|
-| **WebRTC P2P** | Both users open the website | Browser-to-browser data channel | **30–80 MB/s** |
-| **Parallel HTTP** | Local server running on one device | 4 parallel TCP streams, 4MB chunks | **100–300 MB/s** |
+| **WebRTC P2P** | Both users open the website | Browser-to-browser data channel via Socket.IO signaling | **30–80 MB/s** |
+| **Parallel HTTP** | Native app or local server on the same WiFi | 4 parallel TCP streams, 4MB chunks, direct to device | **100–300 MB/s** |
 
 HyperDrop **automatically picks the right mode**:
-- If a local HyperDrop server is detected on your WiFi → uses fast parallel HTTP
-- If no local server (just the website) → uses WebRTC for direct P2P transfer
+- Devices discovered on the local network → **Parallel HTTP** (fastest)
+- Devices discovered via the signaling server → **WebRTC P2P** (works across any network)
 - Either way, **your file data never passes through any cloud server**
 
 ```
-WebRTC P2P (default — no setup needed):
+WebRTC P2P (browser ↔ browser):
 Phone ◄════════════════════════════════► Laptop
          Direct WiFi data channel
-         Signaling via Render (metadata only)
+         Signaling server relays metadata only
 
-Parallel HTTP (when local server runs):
+Parallel HTTP (native app or local server):
 Phone ──► [Stream 1] ──► Chunk 1, 5, 9  ──►
-      ──► [Stream 2] ──► Chunk 2, 6, 10 ──► Laptop:3001
+      ──► [Stream 2] ──► Chunk 2, 6, 10 ──► Laptop:53317
       ──► [Stream 3] ──► Chunk 3, 7, 11 ──►  100–300 MB/s
       ──► [Stream 4] ──► Chunk 4, 8, 12 ──►
 ```
@@ -94,28 +100,46 @@ Phone ──► [Stream 1] ──► Chunk 1, 5, 9  ──►
 ## ✨ Key Features
 
 ### 📡 Instant Device Discovery
-Open HyperDrop on two devices. They find each other automatically within seconds. Three discovery methods run in parallel:
-- **Same WiFi** — mDNS auto-discovery (`_hyperdrop._tcp.local`)
-- **Cross-network** — 6-character pairing code or QR scan
-- **Hotspot** — create a hotspot, connect, transfer
+Open HyperDrop on two devices. They find each other automatically. Multiple discovery methods run in parallel:
+- **Same WiFi** — UDP multicast auto-discovery + mDNS (`_hyperdrop._tcp.local`)
+- **Cross-network** — QR code scan or manual IP entry
+- **Hotspot** — create a hotspot, connect the other device, transfer
+
+### 💬 Built-in Chat
+Send text messages between connected devices — works fully offline over the local network. Messages sync via HTTP polling when devices are on the same WiFi, or via Socket.IO when using WebRTC mode. Includes:
+- Real-time typing indicators
+- Unread message badge counter
+- Audio pop notification on new messages
+- Desktop system notifications
+
+### 📋 Clipboard Sync
+Copy text on one device, paste it on the other. Clipboard entries sync automatically between connected peers over the local network. Supports text and URL content types.
+
+### 🔒 Trusted Devices
+Check "Always trust this device" when accepting a transfer. Future transfers from that device are **automatically accepted** — no more tapping Accept every time for your own devices.
+
+### 🔔 Audio & Desktop Notifications
+- **Success chime** plays when a file transfer completes (synthesized via Web Audio API — no external audio files needed)
+- **Message pop** plays when a chat message arrives while the chat panel is closed
+- **Desktop notifications** appear for completed transfers and incoming messages (with browser permission)
+
+### 📂 Drag & Drop
+Drag files or entire folders directly onto the Home page or Send page. HyperDrop uses `react-dropzone` with `webkitdirectory` support for recursive folder uploads.
 
 ### 🔄 Retry & Resume
 Transfer interrupted? Hit **Retry** — it picks up where it left off. The server tracks which chunks were received, so only missing chunks are re-sent.
 
 ### 🔋 Background Transfer
-Switch tabs, check your email, browse the web — your transfer keeps running. HyperDrop uses Web Locks, AudioContext keep-alive, and BroadcastChannel heartbeats to prevent the browser from killing the connection.
+Switch tabs, check your email — your transfer keeps running. HyperDrop uses Web Locks, AudioContext keep-alive, and BroadcastChannel heartbeats to prevent the browser from killing the connection.
 
 ### ⚠️ Reload Protection
 Accidentally reload the page during a transfer? The browser warns you first. No more losing a 2GB transfer because you hit F5.
 
 ### 📲 No App Needed on the Other Side
-HyperDrop runs a **built-in FTP server** (port 2121) and **HTTP file browser** (`/browse`). The receiver can:
-- Open any file manager and connect via FTP
-- Open a browser and type `http://192.168.x.x:3001/browse`
-- Download directly — **no installation, no account, nothing**
+The companion server includes a **built-in FTP server** (port 2121) and **HTTP file browser** (`/browse`). The receiver can use any file manager or browser.
 
 ### 🌐 Progressive Web App (PWA)
-Install HyperDrop on your home screen. It works offline, caches assets via Service Worker, and loads instantly on repeat visits.
+Install HyperDrop on your home screen. It works offline, caches assets via Service Worker, and loads instantly.
 
 ---
 
@@ -136,30 +160,35 @@ Your Phone ──── Direct WiFi ──── Their Phone
 - ❌ No Google Ads SDK
 - ❌ Zero telemetry of any kind
 
-The **only** cloud server (Render) handles device discovery and signaling — like a phone switchboard. It never sees, stores, or relays your file data.
+The **only** cloud component handles device discovery and WebRTC signaling — it never sees, stores, or relays your file data.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Vercel (CDN)                          │
-│  Static frontend: React + Vite + CSS + Service Worker        │
-│  Cached offline as PWA — loads instantly after first visit    │
-├─────────────────────────────────────────────────────────────┤
-│                     Render (Signaling)                        │
-│  Socket.IO: device discovery, transfer negotiation,          │
-│  WebRTC offer/answer/ICE relay. NO file data passes here.    │
-├─────────────────────────────────────────────────────────────┤
-│                    Browser ↔ Browser                         │
-│  WebRTC DataChannel: file chunks flow directly P2P           │
-│  256KB chunks, backpressure managed, speed tracked           │
-├─────────────────────────────────────────────────────────────┤
-│              Optional: Local Server (:3001)                  │
-│  When running locally — parallel HTTP, FTP, file browser     │
-│  4MB chunks × 4 streams = 100-300 MB/s                       │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                         Vercel (CDN)                              │
+│  Static frontend: React + Vite + CSS + Service Worker             │
+│  Cached offline as PWA — loads instantly after first visit         │
+├──────────────────────────────────────────────────────────────────┤
+│                   Signaling Server (:53317)                        │
+│  Socket.IO: device discovery, room pairing, transfer negotiation  │
+│  WebRTC offer/answer/ICE relay. NO file data passes here.         │
+├──────────────────────────────────────────────────────────────────┤
+│                     Browser ↔ Browser                              │
+│  WebRTC DataChannel: file chunks flow directly P2P                │
+│  256KB chunks, backpressure managed, speed tracked                │
+├──────────────────────────────────────────────────────────────────┤
+│               Android Native (Capacitor + Kotlin)                  │
+│  HyperDropHttpServer: NanoHTTPD on port 53317                     │
+│  UDP multicast discovery, file reassembly, chat/clipboard sync    │
+│  LocalServerPlugin: Capacitor bridge to JS layer                  │
+├──────────────────────────────────────────────────────────────────┤
+│              Optional: Companion Server (:53317)                   │
+│  Express: parallel HTTP chunk upload, FTP, file browser           │
+│  4MB chunks × 4 streams = 100–300 MB/s                            │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -170,46 +199,63 @@ The **only** cloud server (Render) handles device discovery and signaling — li
 hyperdrop/
 ├── src/
 │   ├── engine/
-│   │   ├── webrtcEngine.ts          ← WebRTC P2P data channel transfer
-│   │   ├── parallelChunkUploader.ts ← 4-stream parallel HTTP upload
-│   │   └── backgroundGuard.ts       ← keeps transfers alive in background
+│   │   ├── webrtcEngine.ts             ← WebRTC P2P data channel transfer
+│   │   ├── parallelChunkUploader.ts    ← 4-stream parallel HTTP upload
+│   │   └── backgroundGuard.ts          ← keeps transfers alive in background
 │   ├── components/
-│   │   ├── TransferCard.tsx         ← real-time transfer progress + retry
-│   │   ├── ProgressRing.tsx         ← circular progress indicator
-│   │   ├── SpeedBadge.tsx           ← live MB/s display
-│   │   ├── WebPairModal.tsx         ← cross-network pairing UI
-│   │   ├── WebQRScanner.tsx         ← QR code scanner
-│   │   ├── DisconnectAlert.tsx      ← peer disconnect notification
-│   │   └── Layout.tsx               ← app shell with navigation
+│   │   ├── TransferCard.tsx            ← real-time transfer progress + retry
+│   │   ├── ConsentModal.tsx            ← accept/decline + trusted device checkbox
+│   │   ├── DeviceList.tsx              ← nearby device list with status indicators
+│   │   ├── ChatPanel.tsx               ← sliding chat panel with typing indicators
+│   │   ├── ClipboardSync.tsx           ← clipboard history and sync UI
+│   │   ├── DropZone.tsx                ← drag-and-drop file/folder uploader
+│   │   ├── FilePicker.tsx              ← file selection with folder support
+│   │   ├── ManualIPEntry.tsx           ← manual IP:port connection dialog
+│   │   ├── WebQRScanner.tsx            ← QR code scanner for pairing
+│   │   ├── QRCodeDisplay.tsx           ← QR code generator
+│   │   ├── Layout.tsx                  ← app shell with bottom navigation
+│   │   └── ...
 │   ├── pages/
-│   │   ├── Home.tsx                 ← device discovery + pairing
-│   │   ├── Send.tsx                 ← file picker + send flow
-│   │   ├── Receive.tsx              ← incoming transfer handling
-│   │   └── History.tsx              ← past transfers log
+│   │   ├── Home.tsx                    ← dashboard: devices, QR, drop zone
+│   │   ├── Send.tsx                    ← file picker + device select + send
+│   │   ├── Receive.tsx                 ← QR code display + incoming transfers
+│   │   └── History.tsx                 ← past transfers log with stats
 │   ├── hooks/
-│   │   ├── useTransfer.ts           ← transfer state + WebRTC/HTTP routing
-│   │   ├── useDiscovery.ts          ← device discovery polling
-│   │   └── useSocket.ts             ← Socket.IO + WebRTC signaling
-│   └── store/
-│       └── useStore.ts              ← Zustand global state (persisted)
+│   │   ├── useTransfer.ts              ← dual WebRTC/HTTP transfer routing
+│   │   ├── useSocket.ts                ← Socket.IO + WebRTC signaling
+│   │   ├── useDiscovery.ts             ← multi-method device discovery
+│   │   ├── useIncomingTransfers.ts     ← native listener for incoming files/chat/clipboard
+│   │   ├── useLocalSync.ts             ← offline LAN chat/clipboard polling
+│   │   └── useLocalTransport.ts        ← HTTP transport helpers (prepare, poll, etc.)
+│   ├── native/
+│   │   └── LocalServer.ts             ← Capacitor plugin bridge (TypeScript ↔ Kotlin)
+│   ├── shared/
+│   │   └── protocol.ts                ← protocol constants, PrepareRequest types
+│   ├── store/
+│   │   └── useStore.ts                ← Zustand global state (persisted)
+│   └── utils/
+│       ├── audio.ts                   ← Web Audio API chime synthesizer
+│       ├── notification.ts            ← desktop notification helper
+│       ├── crypto.ts                  ← session tokens, fingerprints, encryption
+│       └── formatBytes.ts            ← human-readable file size formatting
 ├── server/
-│   ├── index.ts                     ← entry point, ports 3001 + 2121
-│   ├── httpServer.ts                ← Express: chunk upload, HTTP range download
-│   ├── socketServer.ts              ← Socket.IO: events, WebRTC relay, rooms
-│   ├── ftpServer.ts                 ← ftp-srv anonymous server
-│   └── discovery.ts                 ← multicast-dns announcer
+│   ├── index.ts                       ← entry point: Express + Socket.IO on :53317
+│   ├── httpServer.ts                  ← Express: chunk upload, file browser, chat/clipboard API
+│   ├── socketServer.ts                ← Socket.IO: events, WebRTC relay, room management
+│   ├── ftpServer.ts                   ← ftp-srv anonymous server on :2121
+│   └── discovery.ts                   ← multicast-dns announcer
+├── android/
+│   ├── app/src/main/java/app/hyperdrop/transfer/
+│   │   ├── HyperDropHttpServer.kt     ← NanoHTTPD: file receive, chat, clipboard, discovery
+│   │   ├── LocalServerPlugin.kt       ← Capacitor plugin: multicast, IP resolution, consent
+│   │   └── MainActivity.java          ← Capacitor activity entry point
+│   ├── app/src/main/AndroidManifest.xml
+│   └── app/build.gradle
 ├── public/
-│   ├── sw.js                        ← Service Worker for offline caching
-│   └── manifest.json                ← PWA manifest
-├── Dockerfile                       ← production container for Render
-├── capacitor.config.ts              ← Capacitor config (appId, webDir, plugins)
-├── android/                         ← Capacitor Android project
-│   ├── app/build.gradle             ← Android build config
-│   ├── app/src/main/
-│   │   ├── AndroidManifest.xml      ← permissions, activity config
-│   │   └── assets/public/           ← synced web build output
-│   └── variables.gradle             ← SDK version variables
-└── vercel.json                      ← SPA rewrite rules for Vercel
+│   ├── sw.js                          ← Service Worker for offline caching
+│   └── manifest.json                  ← PWA manifest
+├── capacitor.config.ts                ← Capacitor config (appId, webDir, plugins)
+└── vite.config.ts                     ← Vite build + dev proxy config
 ```
 
 ---
@@ -219,15 +265,18 @@ hyperdrop/
 | Layer | Technology | Why |
 |---|---|---|
 | Frontend | React 18 + TypeScript | Type-safe, component-driven UI |
-| Styling | Vanilla CSS + Framer Motion | Full control, smooth 60fps animations |
+| Styling | Tailwind CSS + Framer Motion | Utility-first styling with smooth 60fps animations |
 | State | Zustand (persisted) | Minimal boilerplate, survives page refresh |
 | Build | Vite 5 | Sub-second HMR, optimized production bundles |
 | P2P Transfer | WebRTC DataChannels | Direct browser-to-browser, no server needed |
-| Native | Capacitor 6 | One codebase → Android + iOS + Web |
-| Signaling | Socket.IO on Express | Low-latency WebSocket event relay |
+| Native App | Capacitor 6 + Kotlin | One codebase → Android + Web with native networking |
+| Native HTTP | NanoHTTPD (Kotlin) | Embedded HTTP server on Android for LAN transfers |
+| Signaling | Socket.IO on Express | Low-latency WebSocket event relay + room management |
 | HTTP Transfer | Parallel fetch + multer | 4-stream parallel chunks for max throughput |
-| Discovery | multicast-dns | Zero-config LAN peer finding |
+| Discovery | UDP Multicast + mDNS | Zero-config LAN peer finding |
 | FTP | ftp-srv | No-app fallback for any device |
+| Audio | Web Audio API | Synthesized chimes — no external audio files |
+| Notifications | Notification API | Desktop system notifications for transfers & messages |
 | Icons | Lucide React | Clean, consistent iconography |
 | Offline | Service Worker + PWA | Full offline support after first load |
 
@@ -249,60 +298,47 @@ hyperdrop/
 git clone https://github.com/Jai-Bharath/Hyperdrop.git
 cd Hyperdrop
 
-# Install
+# Install dependencies
 npm install
 
-# Start everything (frontend + server)
+# Start everything (frontend + companion server)
 npm run dev
 ```
 
 - **Web App**: `http://localhost:5173`
-- **File Browser**: `http://localhost:3001/browse`
+- **Companion Server**: `http://localhost:53317`
+- **File Browser**: `http://localhost:53317/browse`
 - **FTP Access**: `ftp://YOUR_LOCAL_IP:2121`
 
-Running locally enables the **parallel HTTP engine** (4 streams, 100-300 MB/s) instead of WebRTC.
+Running locally enables the **parallel HTTP engine** (4 streams, 100–300 MB/s) alongside WebRTC.
 
 ### Build for Production
 
 ```bash
+# TypeScript check + Vite production build
 npm run build
 ```
 
-### Deploy
+### 📱 Build Android APK
 
-| Service | Purpose | Config |
-|---|---|---|
-| **Vercel** | Frontend (static React build) | Auto-deploys from GitHub. Set `VITE_SOCKET_URL` to Render URL |
-| **Render** | Signaling server only | Docker runtime, `PORT=3001`. Handles Socket.IO + WebRTC relay |
-
-```bash
-# Docker (for Render)
-docker build -t hyperdrop .
-docker run -p 3001:3001 hyperdrop
-```
-
-### 📱 Build Android APK (via Capacitor)
-
-HyperDrop ships a native Android app built with **Capacitor 6**. The same React codebase is bundled into a WebView-based Android app with native filesystem, network, and share APIs.
+HyperDrop ships a native Android app built with **Capacitor 6** and a **Kotlin HTTP server**. The same React codebase is bundled into a WebView with native networking capabilities (UDP multicast discovery, NanoHTTPD file server, multicast lock).
 
 #### Prerequisites
 
 - **Node.js** ≥ 18
 - **Java JDK** 17 or 21
-- **Android SDK** (API 34) — install via [Android Studio](https://developer.android.com/studio) or the [Android CLI](https://developer.android.com/tools)
+- **Android SDK** (API 34) — install via [Android Studio](https://developer.android.com/studio)
 
 #### Build Steps
 
 ```bash
-# 1. Build the web app
-npm run build
+# 1. Build web + sync + assemble APK (all-in-one)
+npm run build:apk
 
-# 2. Sync web assets into the Android project
-npx cap sync android
-
-# 3. Build a debug APK
-cd android
-./gradlew assembleDebug
+# Or step by step:
+npm run build                    # Build the web app
+npx cap sync android             # Sync web assets into Android project
+cd android && gradlew assembleDebug   # Build debug APK
 ```
 
 The generated APK will be at:
@@ -310,23 +346,20 @@ The generated APK will be at:
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-#### Build a Release APK
+#### Release APK
 
 ```bash
 cd android
-./gradlew assembleRelease
+gradlew assembleRelease
 ```
 
-> **Note:** Release builds require a signing keystore. See the [Android signing guide](https://developer.android.com/studio/publish/app-signing) for setup.
+> **Note:** Release builds require a signing keystore. See the [Android signing guide](https://developer.android.com/studio/publish/app-signing).
 
 #### Install on Device
 
 ```bash
 # Via ADB (USB debugging enabled)
 adb install android/app/build/outputs/apk/debug/app-debug.apk
-
-# Or download from the Install App button on the home page
-# which offers both PWA install and APK download options
 ```
 
 #### Open in Android Studio
@@ -341,20 +374,26 @@ npx cap open android
 
 - [x] WebRTC browser-to-browser P2P transfer
 - [x] Parallel HTTP transfer engine (100–300 MB/s with local server)
-- [x] mDNS zero-config device discovery
-- [x] Cross-network pairing (6-char code + QR)
+- [x] UDP multicast + mDNS zero-config device discovery
+- [x] Cross-network pairing (QR code + manual IP)
 - [x] Built-in FTP server (no-app fallback)
-- [x] HTTP range support + parallel download segments
 - [x] Retry & resume for broken transfers
 - [x] Background transfer protection (Web Locks + AudioContext)
 - [x] Page reload warning during active transfers
 - [x] PWA + Service Worker offline support
-- [x] Capacitor Android packaging (APK build)
-- [x] In-app Install button (PWA + APK download)
-- [ ] Transfer history with speed analytics
+- [x] Native Android app with Kotlin HTTP server
+- [x] Built-in chat (offline LAN sync + Socket.IO)
+- [x] Clipboard sync between devices
+- [x] Trusted devices — auto-accept transfers
+- [x] Audio notifications (Web Audio chimes)
+- [x] Desktop system notifications
+- [x] Drag & drop files and folders
+- [x] Device identity & clear peer naming
+- [x] Consent modal with trust checkbox
+- [x] Transfer history with speed analytics
 - [ ] iOS native support
-- [ ] Multi-file batch transfer progress
-- [ ] Folder transfer support
+- [ ] End-to-end encryption (ECDH key exchange)
+- [ ] Multi-file batch progress aggregation
 - [ ] Smart compression (auto-skip MP4/ZIP, compress BMP/RAW)
 - [ ] TURN relay for devices behind strict NATs
 
@@ -390,7 +429,7 @@ MIT — free to use, modify, and distribute. See [LICENSE](LICENSE).
 
 <div align="center">
 
-**Built by [Jai Bharath](https://github.com/Jai-Bharath) with the goal of making file sharing actually fast.**
+**Built by [Jai Bharath](https://github.com/Jai-Bharath) with the goal of making file sharing actually work across every device.**
 
 <br/>
 
