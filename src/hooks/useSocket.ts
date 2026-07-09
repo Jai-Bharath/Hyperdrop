@@ -123,26 +123,97 @@ export function useSocket(): Socket | null {
   const addTransfer = useStore((s) => s.addTransfer);
 
   useEffect(() => {
-    // ── Resolve dynamic connection URL ── (100% offline — local companion server only)
+    // ── Resolve dynamic connection URL ── (100% offline — local network only)
     let targetUrl = socketUrl || ((import.meta as any).env.VITE_SOCKET_URL as string) || '';
-    if (!targetUrl) {
-      const origin = window.location.origin;
-      const isLocalDev = origin.includes('localhost') || 
-                         origin.includes('127.0.0.1') || 
-                         /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
 
-      if (isLocalDev) {
-        // Dev server or direct LAN access — connect to same origin
-        targetUrl = origin;
-      } else {
-        // Hosted static site (e.g. Vercel) — try local companion server on this machine
-        targetUrl = `http://localhost:${LOCAL_SIGNAL_PORT}`;
+    // Helper: probe an IP for a companion server
+    const probeCompanion = async (ip: string): Promise<string | null> => {
+      try {
+        const res = await fetch(`http://${ip}:${LOCAL_SIGNAL_PORT}/api/info`, {
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.ok) return `http://${ip}:${LOCAL_SIGNAL_PORT}`;
+      } catch { /* not reachable */ }
+      return null;
+    };
+
+    // Helper: discover local IP via WebRTC ICE (no cloud STUN needed)
+    const discoverLocalIp = (): Promise<string> =>
+      new Promise((resolve) => {
+        try {
+          const pc = new RTCPeerConnection({ iceServers: [] });
+          pc.createDataChannel('');
+          pc.createOffer().then((offer) => pc.setLocalDescription(offer));
+          const timeout = setTimeout(() => { pc.close(); resolve(''); }, 3000);
+          pc.onicecandidate = (e) => {
+            if (!e.candidate) return;
+            const match = e.candidate.candidate.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+            if (match && match[1] !== '0.0.0.0' && !match[1].startsWith('0.')) {
+              const ip = match[1];
+              if (ip.startsWith('192.168.') || ip.startsWith('10.') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) {
+                clearTimeout(timeout); pc.close(); resolve(ip);
+              }
+            }
+          };
+        } catch { resolve(''); }
+      });
+
+    // Helper: scan subnet for a companion server
+    const findCompanionOnLan = async (myIp: string): Promise<string | null> => {
+      const base = myIp.split('.').slice(0, 3).join('.');
+      const BATCH = 20;
+      for (let start = 1; start <= 254; start += BATCH) {
+        const promises: Promise<string | null>[] = [];
+        for (let i = start; i < Math.min(start + BATCH, 255); i++) {
+          const ip = `${base}.${i}`;
+          if (ip === myIp) continue;
+          promises.push(probeCompanion(ip));
+        }
+        const results = await Promise.all(promises);
+        const found = results.find((r) => r !== null);
+        if (found) return found;
       }
-    }
+      return null;
+    };
 
-    console.log(`[useSocket] Connecting to socket server: ${targetUrl}`);
+    const resolveAndConnect = async () => {
+      if (!targetUrl) {
+        const origin = window.location.origin;
+        const isLocalDev = origin.includes('localhost') ||
+                           origin.includes('127.0.0.1') ||
+                           /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
 
-    const socket = io(targetUrl, {
+        if (isLocalDev) {
+          // Dev server or direct LAN access — connect to same origin (Vite proxy)
+          targetUrl = origin;
+        } else {
+          // Hosted static site — try localhost first, then scan LAN
+          const localResult = await probeCompanion('localhost');
+          if (localResult) {
+            targetUrl = localResult;
+          } else {
+            // Scan the LAN for a companion server
+            const myIp = await discoverLocalIp();
+            if (myIp) {
+              const lanResult = await findCompanionOnLan(myIp);
+              if (lanResult) {
+                targetUrl = lanResult;
+                console.log(`[useSocket] Found companion server on LAN: ${lanResult}`);
+              }
+            }
+            if (!targetUrl) {
+              // Last resort: try common gateway IPs
+              targetUrl = (await probeCompanion('192.168.1.1')) ||
+                          (await probeCompanion('192.168.0.1')) ||
+                          `http://localhost:${LOCAL_SIGNAL_PORT}`;
+            }
+          }
+        }
+      }
+
+      console.log(`[useSocket] Connecting to socket server: ${targetUrl}`);
+
+      const socket = io(targetUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -150,8 +221,8 @@ export function useSocket(): Socket | null {
       reconnectionDelayMax: 5000,
     });
 
-    socketRef.current = socket;
-    sharedSocket = socket;
+      socketRef.current = socket;
+      sharedSocket = socket;
 
     // ── Connection lifecycle ──
     socket.on('connect', () => {
@@ -690,12 +761,19 @@ export function useSocket(): Socket | null {
       } catch { /* ignore */ }
     });
 
+    }; // end resolveAndConnect
+
+    // Launch async connection
+    resolveAndConnect();
+
     // ── Cleanup on Url Change or Unmount ──
     return () => {
-      socket.removeAllListeners();
-      socket.disconnect();
-      socketRef.current = null;
-      sharedSocket = null;
+      if (socketRef.current) {
+        socketRef.current.removeAllListeners();
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        sharedSocket = null;
+      }
     };
   }, [socketUrl, setConnected, addDevice, removeDevice, updateTransfer, addTransfer]);
 
