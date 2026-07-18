@@ -3,10 +3,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LayoutV2 from './components/v2/LayoutV2';
 import ProfilesScreen from './pages/v2/ProfilesScreen';
 import ChatScreen from './pages/v2/ChatScreen';
+import RadarView from './components/v2/RadarView';
 import { initializeDiscovery } from './hooks/useDiscovery';
 import { useIncomingTransfers } from './hooks/useIncomingTransfers';
 import { useLocalSync } from './hooks/useLocalSync';
 import { useStore } from './store/useStore';
+import { useIsDesktop } from './hooks/useMediaQuery';
 import DisconnectAlert from './components/DisconnectAlert';
 import ConsentModal from './components/ConsentModal';
 
@@ -43,7 +45,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-dvh flex-col items-center justify-center bg-[#0f0f13] px-6 text-center">
+        <div className="flex min-h-dvh flex-col items-center justify-center bg-[#0a0a0f] px-6 text-center">
           <div className="card max-w-md space-y-6 p-8 border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)]">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-500 mx-auto">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
@@ -104,6 +106,7 @@ function DiscoveryManager({ children }: { children: ReactNode }) {
 export default function App() {
   const theme = useStore((state) => state.theme);
   const setDeferredPrompt = useStore((state) => state.setDeferredPrompt);
+  const isDesktop = useIsDesktop();
 
   // Expose store getState globally for beforeunload handler in main.tsx
   (window as any).__hyperdrop_getState = useStore.getState;
@@ -156,8 +159,20 @@ export default function App() {
         <DiscoveryManager>
           <Routes>
             <Route path="/" element={<LayoutV2 />}>
-              <Route index element={<ProfilesScreen />} />
-              <Route path="chat/:deviceId" element={<ChatScreen />} />
+              {/* Desktop: ProfilesScreen is rendered directly in LayoutV2's sidebar.
+                  The Outlet renders RadarView (index) or ChatScreen.
+                  Mobile: ProfilesScreen is the index route via Outlet. */}
+              {isDesktop ? (
+                <>
+                  <Route index element={<RadarView />} />
+                  <Route path="chat/:deviceId" element={<ChatScreen />} />
+                </>
+              ) : (
+                <>
+                  <Route index element={<ProfilesScreen />} />
+                  <Route path="chat/:deviceId" element={<ChatScreen />} />
+                </>
+              )}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

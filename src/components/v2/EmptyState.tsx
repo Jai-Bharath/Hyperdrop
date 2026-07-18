@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Wifi, MessageSquare, QrCode } from 'lucide-react';
+import { Wifi, MessageSquare, QrCode, Radio } from 'lucide-react';
 
 interface EmptyStateProps {
   type: 'profiles' | 'chat';
@@ -9,40 +9,50 @@ interface EmptyStateProps {
 export default function EmptyState({ type, onPairClick }: EmptyStateProps) {
   if (type === 'profiles') {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+      <div className="flex flex-col items-center justify-center py-16 text-center px-6">
         {/* Animated Radar Effect */}
-        <div className="relative flex items-center justify-center h-32 w-32 mb-6">
-          {/* Radar Circles */}
-          <div className="absolute inset-0 rounded-full border border-brand-500/10 animate-[ping_3s_infinite]" />
-          <div className="absolute inset-4 rounded-full border border-brand-500/15 animate-[ping_2s_infinite]" />
-          <div className="absolute inset-8 rounded-full border border-brand-500/20 animate-pulse" />
-          
-          {/* Scanning Sweep */}
-          <div className="absolute inset-0 rounded-full border border-brand-500/30 overflow-hidden">
-            <div className="h-full w-1/2 bg-gradient-to-r from-brand-500/10 to-transparent origin-right rotate-0 animate-[spin_4s_linear_infinite]" />
-          </div>
+        <div className="relative flex items-center justify-center h-28 w-28 mb-6">
+          {/* Radar rings */}
+          <motion.div
+            className="absolute inset-0 rounded-full border border-brand-500/10"
+            animate={{ scale: [1, 1.8], opacity: [0.4, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
+          />
+          <motion.div
+            className="absolute inset-3 rounded-full border border-brand-500/15"
+            animate={{ scale: [1, 1.6], opacity: [0.5, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
+          />
+          <motion.div
+            className="absolute inset-6 rounded-full border border-brand-500/20"
+            animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut', delay: 1 }}
+          />
 
-          <div className="z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/10 border border-brand-500/25 text-brand-500 shadow-md">
-            <Wifi className="h-7 w-7 animate-pulse" />
+          {/* Center icon */}
+          <div className="z-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-500">
+            <Radio className="h-6 w-6" />
           </div>
         </div>
 
-        <h3 className="text-sm font-semibold text-text-primary mb-1">
-          Looking for nearby devices...
+        <h3 className="text-sm font-semibold text-text-primary mb-1.5">
+          Looking for nearby devices…
         </h3>
-        <p className="text-xs text-text-secondary max-w-[280px] leading-relaxed mb-6">
+        <p className="text-xs text-text-secondary max-w-[260px] leading-relaxed mb-6">
           Make sure Hyperdrop is open on other devices connected to the same Wi-Fi network.
         </p>
 
         {onPairClick && (
-          <button
+          <motion.button
             type="button"
             onClick={onPairClick}
-            className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl border border-brand-500/35 bg-brand-500/10 text-xs font-bold text-brand-500 hover:bg-brand-500/20 active:scale-95 transition-all shadow-sm"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-brand-500/30 bg-brand-500/10 text-xs font-bold text-brand-500 hover:bg-brand-500/15 transition-all shadow-sm"
           >
             <QrCode className="h-4 w-4" />
             Pair New Device
-          </button>
+          </motion.button>
         )}
       </div>
     );
@@ -51,15 +61,26 @@ export default function EmptyState({ type, onPairClick }: EmptyStateProps) {
   // Chat empty state
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-6 py-16">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-light border border-border text-text-secondary mb-4 shadow-sm">
-        <MessageSquare className="h-8 w-8 text-brand-500 opacity-80" />
-      </div>
-      <h3 className="text-sm font-semibold text-text-primary mb-1">
-        Your secure local chat
-      </h3>
-      <p className="text-xs text-text-secondary max-w-[260px] leading-relaxed">
-        Everything sent here runs peer-to-peer over your local network. No cloud tracking.
-      </p>
+      <motion.div
+        initial={{ y: 8, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col items-center"
+      >
+        <motion.div
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-light border border-border text-brand-500 mb-4 shadow-sm"
+        >
+          <MessageSquare className="h-7 w-7 opacity-80" />
+        </motion.div>
+        <h3 className="text-sm font-semibold text-text-primary mb-1">
+          Your secure local chat
+        </h3>
+        <p className="text-xs text-text-secondary max-w-[240px] leading-relaxed">
+          Send files, messages, and media — everything stays peer-to-peer on your local network. No cloud, no tracking.
+        </p>
+      </motion.div>
     </div>
   );
 }

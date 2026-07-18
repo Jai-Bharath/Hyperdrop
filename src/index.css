@@ -18,8 +18,8 @@
   --brand-900: #0c4a6e;
   --brand-glow: rgba(14, 165, 233, 0.15);
 
-  /* Light theme variables */
-  --bg-default: #f8fafc;
+  /* Light theme variables — soft off-white, never pure white */
+  --bg-default: #f5f5f7;
   --surface-default: #ffffff;
   --surface-light: #f1f5f9;
   --surface-dark: #e2e8f0;
@@ -34,25 +34,28 @@
   --glass-strong-bg: rgba(255, 255, 255, 0.9);
   --glass-strong-border: rgba(0, 0, 0, 0.08);
   --shadow-color: rgba(15, 23, 42, 0.06);
+
+  /* Layout */
+  --sidebar-w: 380px;
 }
 
 .dark {
-  /* Dark theme variables */
-  --bg-default: #0b0b0f;
-  --surface-default: #141420;
-  --surface-light: #1f1f33;
+  /* Dark theme variables — deep charcoal with depth, never flat black */
+  --bg-default: #0a0a0f;
+  --surface-default: #121218;
+  --surface-light: #1a1a28;
   --surface-dark: #07070a;
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.04);
-  --text-primary: #f8fafc;
+  --border-default: rgba(255, 255, 255, 0.07);
+  --border-light: rgba(255, 255, 255, 0.035);
+  --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
 
-  --glass-bg: rgba(18, 18, 28, 0.45);
+  --glass-bg: rgba(14, 14, 22, 0.5);
   --glass-border: rgba(255, 255, 255, 0.05);
-  --glass-strong-bg: rgba(10, 10, 16, 0.85);
+  --glass-strong-bg: rgba(10, 10, 16, 0.88);
   --glass-strong-border: rgba(255, 255, 255, 0.08);
-  --shadow-color: rgba(0, 0, 0, 0.4);
+  --shadow-color: rgba(0, 0, 0, 0.5);
 }
 
 /* ─── Base Resets ─────────────────────────────────────────── */
@@ -80,7 +83,12 @@ body {
   -webkit-overflow-scrolling: touch;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+/* Subtle radial gradient for depth in dark mode */
+.dark body {
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(14, 165, 233, 0.03) 0%, transparent 60%);
 }
 
 #root {
@@ -96,13 +104,18 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
+/* ─── Theme Transition Wrapper ───────────────────────────── */
+.theme-transitioning * {
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease !important;
+}
+
 /* ─── Scrollbar ───────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-default);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -111,7 +124,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-light);
+  background: var(--text-muted);
 }
 
 /* ─── Utility Classes ─────────────────────────────────────── */
@@ -265,6 +278,94 @@ h1, h2, h3, h4, h5, h6 {
   background: #8b5cf6;
 }
 
+/* ─── Radar Visualization ─────────────────────────────────── */
+.radar-container {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1;
+}
+
+.radar-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--border-light);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.dark .radar-ring {
+  border-color: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.01);
+}
+
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  animation: radar-sweep 3s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.radar-sweep::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 50%;
+  transform-origin: bottom left;
+  background: conic-gradient(
+    from 0deg at 0% 100%,
+    transparent 0deg,
+    rgba(14, 165, 233, 0.12) 30deg,
+    rgba(14, 165, 233, 0.04) 60deg,
+    transparent 90deg
+  );
+}
+
+/* Light mode sweep */
+:root:not(.dark) .radar-sweep::before {
+  background: conic-gradient(
+    from 0deg at 0% 100%,
+    transparent 0deg,
+    rgba(14, 165, 233, 0.08) 30deg,
+    rgba(14, 165, 233, 0.02) 60deg,
+    transparent 90deg
+  );
+}
+
+.radar-center-node {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.radar-center-glow {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand-500);
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.6), 0 0 30px rgba(14, 165, 233, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+
+.radar-center-ping {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-400);
+  opacity: 0;
+  animation: node-ping 2s ease-out infinite;
+}
+
 /* ─── Animations ──────────────────────────────────────────── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
@@ -302,12 +403,6 @@ h1, h2, h3, h4, h5, h6 {
   animation: shimmer 2.5s infinite;
 }
 
-.animate-radar-sweep {
-  animation: radar-sweep 5s linear infinite;
-  transform: translate3d(-50%, -100%, 0);
-  will-change: transform;
-}
-
 /* ─── Safe Areas (Capacitor) ──────────────────────────────── */
 .safe-top {
   padding-top: env(safe-area-inset-top, 0px);
@@ -319,7 +414,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Selection ───────────────────────────────────────────── */
 ::selection {
-  background-color: rgba(99, 102, 241, 0.25);
+  background-color: rgba(14, 165, 233, 0.25);
   color: #f1f5f9;
 }
 
@@ -381,8 +476,8 @@ body, html {
 
 /* ─── Drop Zone Animations ───────────────────────────────── */
 @keyframes dropzone-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.2); }
-  50% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.2); }
+  50% { box-shadow: 0 0 0 12px rgba(14, 165, 233, 0); }
 }
 
 .animate-dropzone-pulse {
@@ -414,3 +509,51 @@ body, html {
   animation: clip-slide-in 0.3s ease-out forwards;
 }
 
+/* ─── Split-Pane Layout ──────────────────────────────────── */
+.split-layout {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.split-sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  max-width: var(--sidebar-w);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-default);
+  overflow: hidden;
+  position: relative;
+}
+
+.split-main {
+  flex: 1;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─── Filter Chips ───────────────────────────────────────── */
+.chip {
+  @apply inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold 
+         transition-all duration-200 cursor-pointer select-none active:scale-95;
+  background: var(--surface-light);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+.chip:hover {
+  color: var(--text-primary);
+  border-color: var(--brand-400);
+}
+
+.chip-active {
+  @apply chip;
+  background: rgba(14, 165, 233, 0.1);
+  border-color: rgba(14, 165, 233, 0.3);
+  color: var(--brand-500);
+}

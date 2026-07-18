@@ -11,26 +11,22 @@ interface SettingsSheetProps {
 export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
   const history = useStore((s) => s.history);
   const clearHistory = useStore((s) => s.clearHistory);
-  
-  // Custom states that we'll add to useStore later (Phase 4)
-  // For now, we'll read/write from local storage & component state as a bridge
-  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>(() => {
-    return (localStorage.getItem('hyperdrop-theme') as any) || 'dark';
-  });
-
-  const [deviceName, setDeviceName] = useState(() => {
-    return localStorage.getItem('hyperdrop-custom-device-name') || '';
-  });
+  const theme = useStore((s) => s.theme);
+  const setTheme = useStore((s) => s.setTheme);
+  const customDeviceName = useStore((s) => s.customDeviceName);
+  const setCustomDeviceName = useStore((s) => s.setCustomDeviceName);
 
   const [editingName, setEditingName] = useState(false);
-  const [tempName, setTempName] = useState(deviceName);
+  const [tempName, setTempName] = useState(customDeviceName);
 
   const handleThemeChange = (newTheme: 'dark' | 'light' | 'system') => {
+    // Add transitioning class for smooth crossfade
+    const root = document.documentElement;
+    root.classList.add('theme-transitioning');
+
     setTheme(newTheme);
-    localStorage.setItem('hyperdrop-theme', newTheme);
-    
-    // Dispatch system toggle event
-    const root = window.document.documentElement;
+
+    // Apply class
     if (newTheme === 'dark') {
       root.classList.add('dark');
     } else if (newTheme === 'light') {
@@ -43,15 +39,19 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
         root.classList.remove('dark');
       }
     }
+
+    // Remove transitioning class after animation completes
+    setTimeout(() => {
+      root.classList.remove('theme-transitioning');
+    }, 400);
   };
 
   const handleSaveName = () => {
     const clean = tempName.trim();
     if (clean) {
-      setDeviceName(clean);
-      localStorage.setItem('hyperdrop-custom-device-name', clean);
-      
-      // Let's also update store so socket re-registers with new name
+      setCustomDeviceName(clean);
+
+      // Re-register with socket if available
       const socket = (window as any).__hyperdrop_socket;
       if (socket) {
         const deviceId = localStorage.getItem('hyperdrop-device-id') || '';
@@ -66,6 +66,12 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
     }
     setEditingName(false);
   };
+
+  const themeOptions: { key: 'light' | 'dark' | 'system'; label: string; icon: typeof Sun }[] = [
+    { key: 'light', label: 'Light', icon: Sun },
+    { key: 'dark', label: 'Dark', icon: Moon },
+    { key: 'system', label: 'System', icon: Laptop },
+  ];
 
   return (
     <AnimatePresence>
@@ -85,7 +91,7 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
             className="relative z-10 w-full max-w-lg bg-surface-default border-t border-border rounded-t-[32px] p-6 shadow-2xl safe-bottom max-h-[85dvh] flex flex-col"
           >
             {/* Sheet Handle */}
@@ -103,7 +109,7 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
               </button>
             </div>
 
-            {/* Content Area */}
+            {/* Content */}
             <div className="flex-1 overflow-y-auto space-y-6 pb-4">
               
               {/* Device Profile Section */}
@@ -122,12 +128,14 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
                           type="text"
                           value={tempName}
                           onChange={(e) => setTempName(e.target.value)}
-                          className="flex-1 bg-surface-dark border border-border rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-brand-500"
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); }}
+                          autoFocus
+                          className="flex-1 bg-surface-dark border border-border rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-brand-500/50 transition-colors"
                         />
                         <button
                           type="button"
                           onClick={handleSaveName}
-                          className="p-2 rounded-lg bg-brand-500/10 border border-brand-500/20 text-brand-500"
+                          className="p-2 rounded-lg bg-brand-500/10 border border-brand-500/20 text-brand-500 hover:bg-brand-500/20 transition-colors"
                         >
                           <Check className="h-4 w-4" />
                         </button>
@@ -135,12 +143,12 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
                     ) : (
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-text-primary truncate">
-                          {deviceName || 'Hyperdrop Web Client'}
+                          {customDeviceName || 'Hyperdrop Web Client'}
                         </p>
                         <button
                           type="button"
                           onClick={() => {
-                            setTempName(deviceName);
+                            setTempName(customDeviceName);
                             setEditingName(true);
                           }}
                           className="p-1 rounded text-text-muted hover:text-brand-500 transition-colors"
@@ -153,54 +161,31 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
                 </div>
               </div>
 
-              {/* Theme Settings Section */}
+              {/* Theme Section */}
               <div className="space-y-2">
                 <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                  Appearance Theme
+                  Appearance
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleThemeChange('light')}
-                    className={`flex flex-col items-center justify-center gap-2 py-3 rounded-2xl border text-xs font-bold transition-all ${
-                      theme === 'light'
-                        ? 'bg-brand-500/10 border-brand-500/30 text-brand-500 shadow-sm'
-                        : 'bg-surface-light border-border text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Sun className="h-4.5 w-4.5" />
-                    <span>Light</span>
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => handleThemeChange('dark')}
-                    className={`flex flex-col items-center justify-center gap-2 py-3 rounded-2xl border text-xs font-bold transition-all ${
-                      theme === 'dark'
-                        ? 'bg-brand-500/10 border-brand-500/30 text-brand-500 shadow-sm'
-                        : 'bg-surface-light border-border text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Moon className="h-4.5 w-4.5" />
-                    <span>Dark</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleThemeChange('system')}
-                    className={`flex flex-col items-center justify-center gap-2 py-3 rounded-2xl border text-xs font-bold transition-all ${
-                      theme === 'system'
-                        ? 'bg-brand-500/10 border-brand-500/30 text-brand-500 shadow-sm'
-                        : 'bg-surface-light border-border text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Laptop className="h-4.5 w-4.5" />
-                    <span>System</span>
-                  </button>
+                  {themeOptions.map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleThemeChange(key)}
+                      className={`flex flex-col items-center justify-center gap-2 py-3.5 rounded-2xl border text-xs font-bold transition-all duration-200 active:scale-[0.97] ${
+                        theme === key
+                          ? 'bg-brand-500/10 border-brand-500/30 text-brand-500 shadow-sm'
+                          : 'bg-surface-light border-border text-text-secondary hover:text-text-primary hover:border-border'
+                      }`}
+                    >
+                      <Icon className="h-4.5 w-4.5" />
+                      <span>{label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Data & History Section */}
+              {/* History Section */}
               <div className="space-y-2">
                 <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
                   History & Storage
@@ -220,7 +205,7 @@ export default function SettingsSheet({ isOpen, onClose }: SettingsSheetProps) {
                           clearHistory();
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-xs font-bold text-red-500 hover:bg-red-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/15 text-xs font-bold text-red-500 hover:bg-red-500/20 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                     >
                       <Trash2 className="h-4 w-4" />
                       Clear ({history.length})

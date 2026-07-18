@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Send, File, FolderOpen, X, Image, FileText } from 'lucide-react';
+import { Plus, Send, File, FolderOpen, X, Image, Camera } from 'lucide-react';
 import { formatBytes } from '../../utils/formatBytes';
 
 interface ComposerBarProps {
@@ -20,6 +20,7 @@ export default function ComposerBar({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Send typing events with throttling
   useEffect(() => {
@@ -61,33 +62,69 @@ export default function ComposerBar({
     if (folderInputRef.current) folderInputRef.current.value = '';
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setSelectedAttachments((prev) => [...prev, ...Array.from(files)]);
+    }
+    setMenuOpen(false);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
+  const handleCameraCapture = useCallback(async () => {
+    setMenuOpen(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.setAttribute('playsinline', 'true');
+      await video.play();
+
+      // Wait a frame for the video to be ready
+      await new Promise((r) => setTimeout(r, 300));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d')!.drawImage(video, 0, 0);
+
+      stream.getTracks().forEach((t) => t.stop());
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new window.File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          setSelectedAttachments((prev) => [...prev, file]);
+        }
+      }, 'image/jpeg', 0.92);
+    } catch (err) {
+      console.warn('[Composer] Camera access failed:', err);
+    }
+  }, []);
+
   const removeAttachment = (idx: number) => {
     setSelectedAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const totalAttachmentSize = selectedAttachments.reduce((s, f) => s + f.size, 0);
+  const hasContent = text.trim().length > 0 || selectedAttachments.length > 0;
+
+  // Attach menu items
+  const attachOptions = [
+    { icon: <File className="h-4 w-4 text-sky-500" />, label: 'File', onClick: () => { fileInputRef.current?.click(); setMenuOpen(false); } },
+    { icon: <Image className="h-4 w-4 text-emerald-500" />, label: 'Photos & Videos', onClick: () => { imageInputRef.current?.click(); setMenuOpen(false); } },
+    { icon: <FolderOpen className="h-4 w-4 text-amber-500" />, label: 'Folder', onClick: () => { folderInputRef.current?.click(); setMenuOpen(false); } },
+    { icon: <Camera className="h-4 w-4 text-violet-500" />, label: 'Camera', onClick: handleCameraCapture },
+  ];
 
   return (
-    <div className="relative border-t border-border bg-surface-default/60 backdrop-blur-lg px-4 py-3.5 space-y-3 z-30">
+    <div className="relative border-t border-border bg-surface-default/70 backdrop-blur-lg px-4 py-3 space-y-2.5 z-30 shrink-0">
       
       {/* Hidden file inputs */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={handleFileSelect}
-      />
-      <input
-        ref={folderInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={handleFolderSelect}
-        {...{ webkitdirectory: '', directory: '' } as any}
-      />
+      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
+      <input ref={folderInputRef} type="file" multiple className="hidden" onChange={handleFolderSelect} {...{ webkitdirectory: '', directory: '' } as any} />
+      <input ref={imageInputRef} type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleImageSelect} />
 
-      {/* Attachment previews container */}
+      {/* Attachment previews */}
       <AnimatePresence>
         {selectedAttachments.length > 0 && (
           <motion.div
@@ -96,121 +133,108 @@ export default function ComposerBar({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="flex flex-wrap gap-2 pb-2.5 max-h-36 overflow-y-auto">
+            <div className="flex flex-wrap gap-1.5 pb-2 max-h-28 overflow-y-auto">
               {selectedAttachments.map((file, idx) => (
                 <motion.div
                   key={`${file.name}-${idx}`}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="flex items-center gap-2 bg-surface-light border border-border pl-2.5 pr-1.5 py-1.5 rounded-xl text-xs text-text-primary group shrink-0"
+                  className="flex items-center gap-1.5 bg-surface-light border border-border pl-2.5 pr-1 py-1 rounded-lg text-[11px] text-text-primary group shrink-0"
                 >
-                  <FileText className="h-3.5 w-3.5 text-brand-500" />
-                  <div className="max-w-[120px] truncate font-medium">
-                    {file.name}
-                  </div>
-                  <span className="text-[9px] text-text-muted">
-                    ({formatBytes(file.size)})
-                  </span>
+                  <File className="h-3 w-3 text-brand-500 shrink-0" />
+                  <span className="max-w-[100px] truncate font-medium">{file.name}</span>
+                  <span className="text-[9px] text-text-muted">({formatBytes(file.size)})</span>
                   <button
                     type="button"
                     onClick={() => removeAttachment(idx)}
-                    className="p-1 rounded-md text-text-muted hover:text-red-400 hover:bg-white/5 transition-all"
+                    className="p-0.5 rounded text-text-muted hover:text-red-400 transition-colors"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3 w-3" />
                   </button>
                 </motion.div>
               ))}
               
-              {selectedAttachments.length > 0 && (
-                <div className="w-full text-[10px] text-text-muted pt-1">
-                  {selectedAttachments.length} file{selectedAttachments.length > 1 ? 's' : ''} selected · Total size: {formatBytes(totalAttachmentSize)}
-                </div>
-              )}
+              <div className="w-full text-[10px] text-text-muted pt-0.5">
+                {selectedAttachments.length} file{selectedAttachments.length > 1 ? 's' : ''} · {formatBytes(totalAttachmentSize)}
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Input row */}
-      <div className="flex items-center gap-3 relative">
-        {/* Attachment menu trigger */}
+      <div className="flex items-center gap-2.5 relative">
+        {/* Attach menu trigger */}
         <button
           type="button"
           onClick={() => setMenuOpen(!menuOpen)}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border transition-all active:scale-95 ${
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all active:scale-95 ${
             menuOpen
-              ? 'bg-brand-500/10 border-brand-500/35 text-brand-500 rotate-45'
+              ? 'bg-brand-500/10 border-brand-500/30 text-brand-500 rotate-45'
               : 'bg-surface-light border-border text-text-secondary hover:text-text-primary'
           }`}
+          aria-label="Attach files"
         >
-          <Plus className="h-5.5 w-5.5 transition-transform duration-200" />
+          <Plus className="h-5 w-5 transition-transform duration-200" />
         </button>
 
-        {/* Attachment menu list popover */}
+        {/* Attach menu popover */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15 }}
+              initial={{ opacity: 0, scale: 0.92, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 15 }}
+              exit={{ opacity: 0, scale: 0.92, y: 12 }}
               transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-              className="absolute bottom-16 left-0 w-44 glass-strong border border-border shadow-2xl rounded-2xl p-2 flex flex-col gap-1 z-50 origin-bottom-left"
+              className="absolute bottom-14 left-0 w-48 glass-strong border border-border shadow-2xl rounded-xl p-1.5 flex flex-col z-50 origin-bottom-left"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  fileInputRef.current?.click();
-                  setMenuOpen(false);
-                }}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-xs text-text-primary text-left font-semibold transition-colors"
-              >
-                <File className="h-4.5 w-4.5 text-sky-500" />
-                Select File(s)
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  folderInputRef.current?.click();
-                  setMenuOpen(false);
-                }}
-                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-white/5 text-xs text-text-primary text-left font-semibold transition-colors"
-              >
-                <FolderOpen className="h-4.5 w-4.5 text-amber-500" />
-                Select Folder
-              </button>
+              {attachOptions.map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={opt.onClick}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-surface-light text-xs text-text-primary text-left font-semibold transition-colors"
+                >
+                  {opt.icon}
+                  {opt.label}
+                </button>
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Input box */}
+        {/* Text input */}
         <div className="flex-1 relative">
           <input
             type="text"
-            placeholder={selectedAttachments.length > 0 ? "Add files description..." : "Message or drag files here..."}
+            placeholder={selectedAttachments.length > 0 ? "Add a caption..." : "Message or drag files here..."}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSend();
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
             }}
-            className="w-full h-11 pl-4 pr-12 bg-surface-light border border-border rounded-2xl text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20 transition-all duration-200"
+            className="w-full h-10 pl-4 pr-4 bg-surface-light border border-border rounded-xl text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-500/40 focus:ring-1 focus:ring-brand-500/15 transition-all duration-200"
           />
         </div>
 
-        {/* Send message button */}
+        {/* Send button */}
         <motion.button
           type="button"
           onClick={handleSend}
-          disabled={!text.trim() && selectedAttachments.length === 0}
-          whileTap={{ scale: 0.95 }}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 ${
-            text.trim() || selectedAttachments.length > 0
-              ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/25 glow-brand'
+          disabled={!hasContent}
+          whileTap={{ scale: 0.93 }}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+            hasContent
+              ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-500/20 glow-brand'
               : 'bg-surface-light border border-border text-text-muted cursor-not-allowed'
           }`}
+          aria-label="Send message"
         >
-          <Send className="h-4.5 w-4.5 translate-x-[1px] translate-y-[-0.5px]" />
+          <Send className="h-4 w-4 translate-x-[0.5px] translate-y-[-0.5px]" />
         </motion.button>
       </div>
     </div>

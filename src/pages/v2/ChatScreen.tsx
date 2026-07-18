@@ -5,17 +5,19 @@ import { useStore } from '../../store/useStore';
 import { useTransfer } from '../../hooks/useTransfer';
 import { getSharedSocket, getDeviceFriendlyName } from '../../hooks/useSocket';
 import { sendChatMessage as httpSendChat } from '../../hooks/useLocalTransport';
+import { useIsDesktop } from '../../hooks/useMediaQuery';
 import ChatHeader from '../../components/v2/ChatHeader';
 import ChatBubble from '../../components/v2/ChatBubble';
 import ComposerBar from '../../components/v2/ComposerBar';
 import EmptyState from '../../components/v2/EmptyState';
 import { LOCAL_HTTP_PORT } from '../../shared/protocol';
-import { ArrowLeft, Loader2, UploadCloud } from 'lucide-react';
+import { UploadCloud } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 
 export default function ChatScreen() {
   const { deviceId } = useParams<{ deviceId: string }>();
   const navigate = useNavigate();
+  const isDesktop = useIsDesktop();
 
   const devices = useStore((s) => s.devices);
   const conversations = useStore((s) => s.conversations);
@@ -156,41 +158,59 @@ export default function ChatScreen() {
     noClick: true,
   });
 
+  // Clear chat handler
+  const handleClearChat = useCallback(() => {
+    if (confirm(`Clear all chat history with ${activeDevice.name}?`)) {
+      useStore.getState().clearChat(activeDevice.id);
+    }
+  }, [activeDevice]);
+
   return (
     <div
       {...getRootProps()}
-      className="max-w-xl mx-auto flex flex-col h-[calc(100dvh-2rem)] relative select-none"
+      className={`flex flex-col h-full relative select-none ${
+        isDesktop ? '' : 'max-w-xl mx-auto h-[calc(100dvh-1rem)] px-2 pt-2'
+      }`}
     >
       <input {...getInputProps()} />
 
-      {/* Drag & drop overlay indicator */}
+      {/* ─── Drag & Drop Overlay ───────────────────────────── */}
       <AnimatePresence>
         {isDragActive && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-brand-500/10 border-2 border-dashed border-brand-500 rounded-[32px] z-50 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none"
+            className="absolute inset-0 bg-brand-500/8 border-2 border-dashed border-brand-500/40 rounded-[28px] z-50 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/20 text-brand-500 mb-4 animate-bounce">
-              <UploadCloud className="h-8 w-8" />
-            </div>
-            <h3 className="text-sm font-bold text-text-primary">Drop files here to send</h3>
-            <p className="text-[10px] text-text-muted mt-1">Directly to {activeDevice.name}</p>
+            <motion.div
+              initial={{ scale: 0.8, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="flex flex-col items-center"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/15 border border-brand-500/30 text-brand-500 mb-4">
+                <UploadCloud className="h-8 w-8" />
+              </div>
+              <h3 className="text-sm font-bold text-text-primary">Drop files here to send</h3>
+              <p className="text-[11px] text-text-muted mt-1">Directly to {activeDevice.name}</p>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Dynamic Chat Header */}
+      {/* ─── Chat Header ───────────────────────────────────── */}
       <ChatHeader
         device={activeDevice}
         isOnline={isOnline}
         activeTransferSpeed={activeSpeed}
         activeTransferProtocol={activeProtocol}
         onBack={() => navigate('/')}
+        showBackButton={!isDesktop}
+        onClearChat={handleClearChat}
       />
 
-      {/* Chat Messages List */}
+      {/* ─── Chat Messages ─────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1 min-h-0 flex flex-col">
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col justify-center">
@@ -212,7 +232,7 @@ export default function ChatScreen() {
           </div>
         )}
         
-        {/* Dynamic peer typing bubble */}
+        {/* Typing indicator */}
         {isTyping && (
           <div className="flex justify-start mb-2 pl-2">
             <div className="bg-surface-light border border-border rounded-2xl px-3 py-2 flex items-center gap-1.5 shadow-sm text-text-secondary text-xs">
@@ -229,7 +249,7 @@ export default function ChatScreen() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Composer input bar */}
+      {/* ─── Composer ──────────────────────────────────────── */}
       <ComposerBar
         onSendMessage={handleSendMessage}
         onSendFiles={handleSendFiles}

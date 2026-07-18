@@ -24,6 +24,7 @@ export default function ProgressRing({
   const offset = circumference - (clampedProgress / 100) * circumference;
   const center = size / 2;
   const gradientId = `progress-gradient-${size}`;
+  const glowId = `progress-glow-${size}`;
 
   // Calculate ETA
   let etaStr = '';
@@ -49,7 +50,7 @@ export default function ProgressRing({
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        className="rotate-[-90deg] drop-shadow-[0_4px_12px_rgba(14,165,233,0.15)]"
+        className="rotate-[-90deg]"
       >
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -57,6 +58,13 @@ export default function ProgressRing({
             <stop offset="50%" stopColor="var(--brand-500)" />
             <stop offset="100%" stopColor="var(--brand-600)" />
           </linearGradient>
+          <filter id={glowId}>
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
 
         {/* Background track */}
@@ -70,7 +78,7 @@ export default function ProgressRing({
           className="opacity-20"
         />
 
-        {/* Progress arc */}
+        {/* Progress arc — smooth transition, no jumpy redraws */}
         <circle
           cx={center}
           cy={center}
@@ -81,7 +89,10 @@ export default function ProgressRing({
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-300 ease-out"
+          filter={clampedProgress > 0 ? `url(#${glowId})` : undefined}
+          style={{
+            transition: 'stroke-dashoffset 350ms cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
         />
       </svg>
 
@@ -94,19 +105,19 @@ export default function ProgressRing({
           {Math.round(clampedProgress)}%
         </span>
         
-        {size >= 100 && speed > 0 && (
+        {size >= 80 && speed > 0 && (
           <span
-            className="text-[9px] text-brand-500 font-bold uppercase tracking-wider mt-0.5"
-            style={{ fontSize: size * 0.08 }}
+            className="text-brand-500 font-bold uppercase tracking-wider mt-0.5"
+            style={{ fontSize: Math.max(8, size * 0.08) }}
           >
             {formatSpeed(speed)}
           </span>
         )}
         
-        {size >= 100 && etaStr && (
+        {size >= 80 && etaStr && (
           <span
-            className="text-[8px] text-text-muted mt-0.5 font-medium"
-            style={{ fontSize: size * 0.075 }}
+            className="text-text-muted mt-0.5 font-medium"
+            style={{ fontSize: Math.max(7, size * 0.07) }}
           >
             ETA: {etaStr}
           </span>
