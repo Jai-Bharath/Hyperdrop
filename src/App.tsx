@@ -1,10 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import Home from './pages/Home';
-import Send from './pages/Send';
-import Receive from './pages/Receive';
-import History from './pages/History';
+import LayoutV2 from './components/v2/LayoutV2';
+import ProfilesScreen from './pages/v2/ProfilesScreen';
+import ChatScreen from './pages/v2/ChatScreen';
 import { initializeDiscovery } from './hooks/useDiscovery';
 import { useIncomingTransfers } from './hooks/useIncomingTransfers';
 import { useLocalSync } from './hooks/useLocalSync';
@@ -104,22 +102,37 @@ function DiscoveryManager({ children }: { children: ReactNode }) {
 
 // ─── App Entry point ────────────────────────────────────────────────
 export default function App() {
+  const theme = useStore((state) => state.theme);
   const setDeferredPrompt = useStore((state) => state.setDeferredPrompt);
 
   // Expose store getState globally for beforeunload handler in main.tsx
   (window as any).__hyperdrop_getState = useStore.getState;
 
   useEffect(() => {
-    // If the event was already captured by the early script in index.html, load it immediately
+    // Set html element class based on store theme
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else if (theme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+  }, [theme]);
+
+  useEffect(() => {
     if ((window as any).deferredPrompt) {
       setDeferredPrompt((window as any).deferredPrompt);
       console.log('[PWA] Early beforeinstallprompt loaded');
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
       (window as any).deferredPrompt = e;
       console.log('[PWA] beforeinstallprompt event captured');
@@ -127,7 +140,6 @@ export default function App() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Register dynamic fallback callback in case it fires while React is loading
     (window as any).onDeferredPromptCaptured = (e: any) => {
       setDeferredPrompt(e);
     };
@@ -143,11 +155,9 @@ export default function App() {
       <BrowserRouter>
         <DiscoveryManager>
           <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
-              <Route path="send" element={<Send />} />
-              <Route path="receive" element={<Receive />} />
-              <Route path="history" element={<History />} />
+            <Route path="/" element={<LayoutV2 />}>
+              <Route index element={<ProfilesScreen />} />
+              <Route path="chat/:deviceId" element={<ChatScreen />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

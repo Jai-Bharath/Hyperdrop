@@ -1,8 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* Brand sky-blue (consistent in both themes) */
+  --brand-50: #f0f9ff;
+  --brand-100: #e0f2fe;
+  --brand-200: #bae6fd;
+  --brand-300: #7dd3fc;
+  --brand-400: #38bdf8;
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+  --brand-700: #0369a1;
+  --brand-800: #075985;
+  --brand-900: #0c4a6e;
+  --brand-glow: rgba(14, 165, 233, 0.15);
+
+  /* Light theme variables */
+  --bg-default: #f8fafc;
+  --surface-default: #ffffff;
+  --surface-light: #f1f5f9;
+  --surface-dark: #e2e8f0;
+  --border-default: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.04);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-strong-bg: rgba(255, 255, 255, 0.9);
+  --glass-strong-border: rgba(0, 0, 0, 0.08);
+  --shadow-color: rgba(15, 23, 42, 0.06);
+}
+
+.dark {
+  /* Dark theme variables */
+  --bg-default: #0b0b0f;
+  --surface-default: #141420;
+  --surface-light: #1f1f33;
+  --surface-dark: #07070a;
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.04);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --glass-bg: rgba(18, 18, 28, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-strong-bg: rgba(10, 10, 16, 0.85);
+  --glass-strong-border: rgba(255, 255, 255, 0.08);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+}
 
 /* ─── Base Resets ─────────────────────────────────────────── */
 * {
@@ -12,26 +63,24 @@
 }
 
 html {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  /* Mobile-friendly overscroll */
   overscroll-behavior-y: contain;
 }
 
 body {
-  background-color: #0b0b0f;
-  color: #f8fafc;
+  background-color: var(--bg-default);
+  color: var(--text-primary);
   min-height: 100dvh;
   overflow-x: hidden;
   position: relative;
-  /* Momentum scrolling on iOS/Android WebView */
   -webkit-overflow-scrolling: touch;
-  /* Safe areas for notched phones */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
@@ -53,62 +102,62 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0b0f;
+  background: var(--bg-default);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e1e2d;
+  background: var(--border-default);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a3e;
+  background: var(--border-light);
 }
 
 /* ─── Utility Classes ─────────────────────────────────────── */
 @layer components {
   .glass {
-    background: rgba(18, 18, 28, 0.45);
+    background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     will-change: transform, backdrop-filter;
   }
 
   .glass-strong {
-    background: rgba(10, 10, 16, 0.85);
+    background: var(--glass-strong-bg);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-strong-border);
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     will-change: transform, backdrop-filter;
   }
 
   .glow-brand {
-    box-shadow: 0 0 25px rgba(99, 102, 241, 0.25),
-                0 0 50px rgba(99, 102, 241, 0.08);
+    box-shadow: 0 0 25px var(--brand-glow),
+                0 0 50px rgba(14, 165, 233, 0.05);
   }
 
   .glow-success {
-    box-shadow: 0 0 25px rgba(52, 211, 153, 0.25),
-                0 0 50px rgba(52, 211, 153, 0.08);
+    box-shadow: 0 0 25px rgba(52, 211, 153, 0.2),
+                0 0 50px rgba(52, 211, 153, 0.05);
   }
 
   .glow-error {
-    box-shadow: 0 0 25px rgba(248, 113, 113, 0.25),
-                0 0 50px rgba(248, 113, 113, 0.08);
+    box-shadow: 0 0 25px rgba(248, 113, 113, 0.2),
+                0 0 50px rgba(248, 113, 113, 0.05);
   }
 
   .glow-cyan {
-    box-shadow: 0 0 25px rgba(6, 182, 212, 0.25),
-                0 0 50px rgba(6, 182, 212, 0.08);
+    box-shadow: 0 0 25px rgba(6, 182, 212, 0.2),
+                0 0 50px rgba(6, 182, 212, 0.05);
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #a5b4fc 10%, #6366f1 50%, #4f46e5 100%);
+    background: linear-gradient(135deg, var(--brand-300) 10%, var(--brand-500) 50%, var(--brand-700) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -123,29 +172,39 @@ h1, h2, h3, h4, h5, h6 {
 
   .btn-primary {
     @apply px-6 py-3.5 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 text-white font-semibold 
-           rounded-2xl transition-all duration-300 active:scale-[0.97]
-           shadow-lg shadow-brand-500/20 hover:shadow-brand-500/35;
+           rounded-2xl transition-all duration-300 active:scale-[0.97];
+    box-shadow: 0 4px 14px 0 var(--brand-glow);
+  }
+  
+  .btn-primary:hover {
+    box-shadow: 0 6px 20px 0 var(--brand-glow);
   }
 
   .btn-secondary {
-    @apply px-6 py-3.5 bg-surface border border-border hover:border-brand-500/40 
-           hover:bg-brand-500/5 text-slate-200 font-semibold rounded-2xl transition-all duration-300 
-           active:scale-[0.97];
+    @apply px-6 py-3.5 font-semibold rounded-2xl transition-all duration-300 active:scale-[0.97];
+    background-color: var(--surface-default);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--brand-400);
+    background-color: var(--surface-light);
   }
 
   .btn-ghost {
-    @apply px-4 py-2.5 text-slate-400 hover:text-slate-200 hover:bg-white/5 
+    @apply px-4 py-2.5 text-text-secondary hover:text-text-primary hover:bg-white/5 
            rounded-xl transition-all duration-200 active:scale-95;
   }
 
   .card {
-    background: rgba(22, 22, 33, 0.45);
+    background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
     border-radius: 24px;
     padding: 24px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 30px var(--shadow-color);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
@@ -159,16 +218,16 @@ h1, h2, h3, h4, h5, h6 {
   
   .card-hover:hover {
     transform: translateY(-3px);
-    background: rgba(26, 26, 40, 0.65);
-    border-color: rgba(99, 102, 241, 0.25);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35),
-                0 0 0 1px rgba(99, 102, 241, 0.15),
-                0 0 25px rgba(99, 102, 241, 0.05);
+    background: var(--surface-light);
+    border-color: rgba(14, 165, 233, 0.25);
+    box-shadow: 0 20px 40px var(--shadow-color),
+                0 0 0 1px rgba(14, 165, 233, 0.15),
+                0 0 25px rgba(14, 165, 233, 0.05);
   }
 
   .input-field {
     @apply w-full px-4 py-3.5 bg-surface-dark border border-border rounded-xl 
-           text-slate-200 placeholder-slate-500 focus:outline-none 
+           text-text-primary placeholder-text-muted focus:outline-none 
            focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20 
            transition-all duration-200;
   }
@@ -178,14 +237,6 @@ h1, h2, h3, h4, h5, h6 {
            text-[10px] font-bold tracking-wider uppercase;
   }
 
-  .nav-item {
-    @apply flex flex-col items-center gap-1 px-4 py-2.5 rounded-xl 
-           text-slate-500 hover:text-slate-300 transition-all duration-300;
-  }
-
-  .nav-item-active {
-    @apply nav-item text-brand-400 bg-brand-500/10;
-  }
 }
 
 /* ─── Ambient Glow Blobs ─────────────────────────────────── */

@@ -40,3 +40,6 @@ ios/App/App/public/
 
 # Binary APK artifacts
 *.apk
+
+# JVM crash logs
+hs_err_pid*.log

@@ -88,6 +88,22 @@ interface ChatMessageData {
   timestamp: number;
   isCode: boolean;
   read: boolean;
+  type?: 'text' | 'file' | 'transfer' | 'folder';
+  fileMeta?: {
+    id: string;
+    name: string;
+    size: number;
+    mimeType: string;
+    relativePath?: string;
+    blobUrl?: string;
+  };
+  transferState?: {
+    status: 'pending' | 'transferring' | 'verifying' | 'done' | 'error' | 'cancelled';
+    progress: number;
+    transferred: number;
+    speed: number;
+    error?: string;
+  };
 }
 
 interface ClipboardEntryData {

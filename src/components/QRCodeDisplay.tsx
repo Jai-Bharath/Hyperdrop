@@ -7,22 +7,28 @@ interface QRCodeDisplayProps {
   size?: number;
 }
 
+import { useStore } from '../store/useStore';
+
 export default function QRCodeDisplay({ url, size = 200 }: QRCodeDisplayProps) {
   const [svg, setSvg] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const theme = useStore((s) => s.theme);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
 
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
     QRCode.toString(url, {
       type: 'svg',
       width: size,
       margin: 1,
       color: {
-        dark: '#f1f5f9',
+        dark: isDark ? '#f1f5f9' : '#0f172a',
         light: '#00000000',
       },
     })
@@ -42,7 +48,7 @@ export default function QRCodeDisplay({ url, size = 200 }: QRCodeDisplayProps) {
     return () => {
       cancelled = true;
     };
-  }, [url, size]);
+  }, [url, size, theme]);
 
   if (loading) {
     return (

@@ -96,6 +96,9 @@ interface HyperDropState {
 
   // Chat
   chatMessages: ChatMessageData[];
+  conversations: Record<string, ChatMessageData[]>;
+  theme: 'dark' | 'light' | 'system';
+  customDeviceName: string;
   peerTyping: boolean;
   unreadCount: number;
   chatOpen: boolean;
@@ -137,12 +140,14 @@ interface HyperDropState {
   clearSelectedFiles: () => void;
 
   // Actions — Chat
-  addChatMessage: (message: ChatMessageData) => void;
-  clearChat: () => void;
+  addChatMessage: (message: ChatMessageData, targetDeviceId?: string) => void;
+  clearChat: (deviceId?: string) => void;
   setUnreadCount: (count: number) => void;
   setChatOpen: (open: boolean) => void;
   setPeerTyping: (typing: boolean) => void;
-  markMessageRead: (messageId: string) => void;
+  markMessageRead: (messageId: string, deviceId?: string) => void;
+  setTheme: (theme: 'dark' | 'light' | 'system') => void;
+  setCustomDeviceName: (name: string) => void;
 
   // Actions — Clipboard
   addClipboardEntry: (entry: ClipboardEntryData) => void;
@@ -171,6 +176,9 @@ export const useStore = create<HyperDropState>()(
       selectedFiles: [],
       deferredPrompt: null,
       chatMessages: [],
+      conversations: {},
+      theme: 'dark',
+      customDeviceName: '',
       peerTyping: false,
       unreadCount: 0,
       chatOpen: false,
@@ -211,14 +219,21 @@ export const useStore = create<HyperDropState>()(
 
       setDevices: (devices: Device[]) => set({ devices }),
 
-      selectDevice: (device: Device | null) => set({ selectedDevice: device }),
+      selectDevice: (device: Device | null) =>
+        set((state: HyperDropState) => {
+          const chatMsgs = device ? (state.conversations[device.id] || []) : [];
+          return {
+            selectedDevice: device,
+            chatMessages: chatMsgs,
+          };
+        }),
 
       pruneStaleDevices: (maxAge: number) =>
         set((state: HyperDropState) => {
           const now = Date.now();
-          // NEVER prune socket-discovered devices — their lifecycle is managed by device:lost events
+          // NEVER prune socket-discovered devices
           const active = state.devices.filter(
-            (d: Device) => d.source === 'socket' || now - d.lastSeen < maxAge
+              (d: Device) => d.source === 'socket' || now - d.lastSeen < maxAge
           );
           return {
             devices: active,
@@ -231,17 +246,115 @@ export const useStore = create<HyperDropState>()(
 
       // Transfers
       addTransfer: (transfer: Transfer) =>
-        set((state: HyperDropState) => ({
-          transfers: [...state.transfers, transfer],
-          activeTransferId: transfer.id,
-        })),
+        set((state: HyperDropState) => {
+          const deviceId = transfer.targetDeviceId;
+          let newConversations = state.conversations;
+          let newChatMessages = state.chatMessages;
+
+          if (deviceId) {
+            const currentMsgs = state.conversations[deviceId] || [];
+            if (!currentMsgs.some(m => m.id === transfer.id)) {
+              const msg: ChatMessageData = {
+                id: transfer.id,
+                text: `Transfer: ${transfer.fileName}`,
+                senderId: transfer.direction === 'send' ? 'self' : deviceId,
+                senderName: transfer.direction === 'send' ? 'Me' : (transfer.deviceName || 'Sender'),
+                timestamp: transfer.startedAt,
+                isCode: false,
+                read: true,
+                type: 'transfer',
+                fileMeta: {
+                  id: transfer.id,
+                  name: transfer.fileName,
+                  size: transfer.fileSize,
+                  mimeType: 'application/octet-stream',
+                  relativePath: transfer.relativePath,
+                },
+                transferState: {
+                  status: transfer.status,
+                  progress: 0,
+                  transferred: 0,
+                  speed: 0,
+                },
+              };
+              const updatedMsgs = [...currentMsgs, msg];
+              newConversations = {
+                ...state.conversations,
+                [deviceId]: updatedMsgs,
+              };
+              if (state.selectedDevice?.id === deviceId) {
+                newChatMessages = updatedMsgs;
+              }
+            }
+          }
+
+          return {
+            transfers: [...state.transfers, transfer],
+            activeTransferId: transfer.id,
+            conversations: newConversations,
+            chatMessages: newChatMessages,
+          };
+        }),
 
       updateTransfer: (id: string, updates: Partial<Transfer>) =>
-        set((state: HyperDropState) => ({
-          transfers: state.transfers.map((t: Transfer) =>
+        set((state: HyperDropState) => {
+          const newTransfers = state.transfers.map((t: Transfer) =>
             t.id === id ? { ...t, ...updates } : t
-          ),
-        })),
+          );
+
+          const transfer = state.transfers.find((t) => t.id === id);
+          const deviceId = transfer?.targetDeviceId;
+
+          let newConversations = state.conversations;
+          let newChatMessages = state.chatMessages;
+
+          if (deviceId && state.conversations[deviceId]) {
+            const currentMsgs = state.conversations[deviceId] || [];
+            const updatedMsgs = currentMsgs.map((m) => {
+              if (m.id === id) {
+                const total = updates.fileSize ?? transfer?.fileSize ?? 1;
+                const done = updates.transferred ?? m.transferState?.transferred ?? 0;
+                const status = updates.status ?? transfer?.status ?? m.transferState?.status ?? 'pending';
+                const fileMeta = m.fileMeta;
+                
+                // If transfer completes, convert bubble from 'transfer' to 'file' style for persistent downloads
+                const isCompleted = status === 'done';
+
+                return {
+                  ...m,
+                  type: (isCompleted ? 'file' : 'transfer') as 'file' | 'transfer',
+                  fileMeta: isCompleted && fileMeta ? {
+                    ...fileMeta,
+                    blobUrl: updates.blobUrl ?? transfer?.blobUrl ?? fileMeta.blobUrl,
+                  } : fileMeta,
+                  transferState: {
+                    status: status as any,
+                    progress: Math.min(100, Math.max(0, (done / total) * 100)),
+                    transferred: done,
+                    speed: updates.speed ?? m.transferState?.speed ?? 0,
+                    error: updates.error ?? m.transferState?.error,
+                  },
+                };
+              }
+              return m;
+            });
+
+            newConversations = {
+              ...state.conversations,
+              [deviceId]: updatedMsgs,
+            };
+
+            if (state.selectedDevice?.id === deviceId) {
+              newChatMessages = updatedMsgs;
+            }
+          }
+
+          return {
+            transfers: newTransfers,
+            conversations: newConversations,
+            chatMessages: newChatMessages,
+          };
+        }),
 
       removeTransfer: (id: string) =>
         set((state: HyperDropState) => ({
@@ -274,27 +387,64 @@ export const useStore = create<HyperDropState>()(
       clearSelectedFiles: () => set({ selectedFiles: [] }),
 
       // Chat
-      addChatMessage: (message: ChatMessageData) =>
+      addChatMessage: (message: ChatMessageData, targetDeviceId?: string) =>
         set((state: HyperDropState) => {
-          // Deduplicate by message ID
-          if (state.chatMessages.some((m) => m.id === message.id)) {
+          const activeId = targetDeviceId || (message.senderId === 'self' ? state.selectedDevice?.id : message.senderId);
+          if (!activeId) return state;
+
+          const current = state.conversations[activeId] || [];
+          if (current.some((m) => m.id === message.id)) {
             return state;
           }
+
+          const updated = [...current, message].slice(-200);
+          const isCurrentActive = state.chatOpen && state.selectedDevice?.id === activeId;
+          const newConversations = {
+            ...state.conversations,
+            [activeId]: updated,
+          };
+
           return {
-            chatMessages: [...state.chatMessages, message].slice(-200), // Keep last 200
-            unreadCount: state.chatOpen ? state.unreadCount : state.unreadCount + (message.senderId !== 'self' ? 1 : 0),
+            conversations: newConversations,
+            chatMessages: state.selectedDevice?.id === activeId ? updated : state.chatMessages,
+            unreadCount: isCurrentActive ? state.unreadCount : state.unreadCount + (message.senderId !== 'self' ? 1 : 0),
           };
         }),
-      clearChat: () => set({ chatMessages: [], unreadCount: 0 }),
+
+      clearChat: (deviceId?: string) =>
+        set((state: HyperDropState) => {
+          const target = deviceId || state.selectedDevice?.id;
+          if (!target) return state;
+          const updated = { ...state.conversations };
+          delete updated[target];
+          return {
+            conversations: updated,
+            chatMessages: state.selectedDevice?.id === target ? [] : state.chatMessages,
+          };
+        }),
+
       setUnreadCount: (unreadCount: number) => set({ unreadCount }),
       setChatOpen: (chatOpen: boolean) => set((state: HyperDropState) => ({ chatOpen, unreadCount: chatOpen ? 0 : state.unreadCount })),
       setPeerTyping: (peerTyping: boolean) => set({ peerTyping }),
-      markMessageRead: (messageId: string) =>
-        set((state: HyperDropState) => ({
-          chatMessages: state.chatMessages.map((m) =>
+      markMessageRead: (messageId: string, deviceId?: string) =>
+        set((state: HyperDropState) => {
+          const target = deviceId || state.selectedDevice?.id;
+          if (!target) return state;
+          const current = state.conversations[target] || [];
+          const updated = current.map((m) =>
             m.id === messageId ? { ...m, read: true } : m
-          ),
-        })),
+          );
+          return {
+            conversations: {
+              ...state.conversations,
+              [target]: updated,
+            },
+            chatMessages: state.selectedDevice?.id === target ? updated : state.chatMessages,
+          };
+        }),
+
+      setTheme: (theme: 'dark' | 'light' | 'system') => set({ theme }),
+      setCustomDeviceName: (customDeviceName: string) => set({ customDeviceName }),
 
       // Clipboard
       addClipboardEntry: (entry: ClipboardEntryData) =>
@@ -306,9 +456,11 @@ export const useStore = create<HyperDropState>()(
     }),
     {
       name: 'hyperdrop-storage',
-      // Only persist history — transfers are volatile (connections lost on reload)
       partialize: (state) => ({
         history: state.history,
+        conversations: state.conversations,
+        theme: state.theme,
+        customDeviceName: state.customDeviceName,
       }),
     }
   )

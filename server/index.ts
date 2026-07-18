@@ -14,7 +14,7 @@ import { hostname, platform } from 'os'
 import { createHash, randomBytes } from 'crypto'
 
 // ─── Constants ────────────────────────────────────────────────────────
-const PORT = LOCAL_HTTP_PORT // 53317 — matches native plugin
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : LOCAL_HTTP_PORT // Respect environment variable on Cloud, fallback to 53317 for local companion
 
 // ─── Device Identity (desktop companion) ──────────────────────────────
 const deviceName = hostname()

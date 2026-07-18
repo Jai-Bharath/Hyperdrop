@@ -1,30 +1,39 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
         },
         surface: {
-          DEFAULT: '#1a1a2e',
-          light: '#242442',
-          dark: '#0f0f13',
+          DEFAULT: 'var(--surface-default)',
+          light: 'var(--surface-light)',
+          dark: 'var(--surface-dark)',
         },
         border: {
-          DEFAULT: '#2a2a3e',
-          light: '#3a3a5e',
+          DEFAULT: 'var(--border-default)',
+          light: 'var(--border-light)',
         },
+        bg: {
+          DEFAULT: 'var(--bg-default)',
+        },
+        text: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
+        }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
@@ -41,8 +50,8 @@ export default {
           '75%, 100%': { transform: 'scale(2.5)', opacity: '0' },
         },
         'glow': {
-          '0%': { boxShadow: '0 0 5px rgba(99, 102, 241, 0.3)' },
-          '100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.6)' },
+          '0%': { boxShadow: '0 0 5px rgba(14, 165, 233, 0.3)' },
+          '100%': { boxShadow: '0 0 20px rgba(14, 165, 233, 0.6)' },
         },
       },
       backdropBlur: {
@@ -52,3 +61,4 @@ export default {
   },
   plugins: [],
 };
+
