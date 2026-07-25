@@ -1,7 +1,6 @@
 PODS:
-  - bitsdojo_window_macos (0.0.1):
-    - FlutterMacOS
   - connectivity_plus (0.0.1):
+    - Flutter
     - FlutterMacOS
   - Defaults (4.2.2)
   - desktop_drop (0.0.1):
@@ -9,8 +8,6 @@ PODS:
   - device_info_plus (0.0.1):
     - FlutterMacOS
   - dynamic_color (0.0.2):
-    - FlutterMacOS
-  - file_picker (0.0.1):
     - FlutterMacOS
   - file_selector_macos (0.0.1):
     - FlutterMacOS
@@ -29,10 +26,13 @@ PODS:
     - FlutterMacOS
   - pasteboard (0.0.1):
     - FlutterMacOS
-  - photo_manager (3.10.0):
+  - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - rust_lib_localsend_app (0.0.1):
+  - photo_manager (2.0.0):
+    - Flutter
+    - FlutterMacOS
+  - rhttp (0.0.1):
     - FlutterMacOS
   - screen_retriever_macos (0.0.1):
     - FlutterMacOS
@@ -50,17 +50,15 @@ PODS:
     - FlutterMacOS
   - wakelock_plus (0.0.1):
     - FlutterMacOS
-  - window_manager (0.5.0):
+  - window_manager (0.2.0):
     - FlutterMacOS
 
 DEPENDENCIES:
-  - bitsdojo_window_macos (from `Flutter/ephemeral/.symlinks/plugins/bitsdojo_window_macos/macos`)
-  - connectivity_plus (from `Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos`)
+  - connectivity_plus (from `Flutter/ephemeral/.symlinks/plugins/connectivity_plus/darwin`)
   - Defaults (~> 4.2)
   - desktop_drop (from `Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos`)
   - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
   - dynamic_color (from `Flutter/ephemeral/.symlinks/plugins/dynamic_color/macos`)
-  - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
   - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - gal (from `Flutter/ephemeral/.symlinks/plugins/gal/darwin`)
@@ -69,8 +67,9 @@ DEPENDENCIES:
   - open_dir_macos (from `Flutter/ephemeral/.symlinks/plugins/open_dir_macos/macos`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
   - pasteboard (from `Flutter/ephemeral/.symlinks/plugins/pasteboard/macos`)
-  - photo_manager (from `Flutter/ephemeral/.symlinks/plugins/photo_manager/darwin`)
-  - rust_lib_localsend_app (from `Flutter/ephemeral/.symlinks/plugins/rust_lib_localsend_app/macos`)
+  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
+  - photo_manager (from `Flutter/ephemeral/.symlinks/plugins/photo_manager/macos`)
+  - rhttp (from `Flutter/ephemeral/.symlinks/plugins/rhttp/macos`)
   - screen_retriever_macos (from `Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
   - tray_manager (from `Flutter/ephemeral/.symlinks/plugins/tray_manager/macos`)
@@ -85,18 +84,14 @@ SPEC REPOS:
     - Defaults
 
 EXTERNAL SOURCES:
-  bitsdojo_window_macos:
-    :path: Flutter/ephemeral/.symlinks/plugins/bitsdojo_window_macos/macos
   connectivity_plus:
-    :path: Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos
+    :path: Flutter/ephemeral/.symlinks/plugins/connectivity_plus/darwin
   desktop_drop:
     :path: Flutter/ephemeral/.symlinks/plugins/desktop_drop/macos
   device_info_plus:
     :path: Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos
   dynamic_color:
     :path: Flutter/ephemeral/.symlinks/plugins/dynamic_color/macos
-  file_picker:
-    :path: Flutter/ephemeral/.symlinks/plugins/file_picker/macos
   file_selector_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   FlutterMacOS:
@@ -113,10 +108,12 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
   pasteboard:
     :path: Flutter/ephemeral/.symlinks/plugins/pasteboard/macos
+  path_provider_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
   photo_manager:
-    :path: Flutter/ephemeral/.symlinks/plugins/photo_manager/darwin
-  rust_lib_localsend_app:
-    :path: Flutter/ephemeral/.symlinks/plugins/rust_lib_localsend_app/macos
+    :path: Flutter/ephemeral/.symlinks/plugins/photo_manager/macos
+  rhttp:
+    :path: Flutter/ephemeral/.symlinks/plugins/rhttp/macos
   screen_retriever_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos
   shared_preferences_foundation:
@@ -135,31 +132,30 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/window_manager/macos
 
 SPEC CHECKSUMS:
-  bitsdojo_window_macos: 7959fb0ca65a3ccda30095c181ecb856fae48ea9
-  connectivity_plus: 4adf20a405e25b42b9c9f87feff8f4b6fde18a4e
+  connectivity_plus: 4c41c08fc6d7c91f63bc7aec70ffe3730b04f563
   Defaults: d785e56c0fb8890dc40351603f05c8e1df1bdd45
-  desktop_drop: 10a3e6a7fa9dbe350541f2574092fecfa345a07b
-  device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
-  dynamic_color: cb7c2a300ee67ed3bd96c3e852df3af0300bf610
-  file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
-  file_selector_macos: 9e9e068e90ebee155097d00e89ae91edb2374db7
-  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  gal: baecd024ebfd13c441269ca7404792a7152fde89
-  in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8
-  network_info_plus: 21d1cd6a015ccb2fdff06a1fbfa88d54b4e92f61
-  open_dir_macos: 79810d7921d777f8732bf6358b3a0839a8fad9b5
-  package_info_plus: f0052d280d17aa382b932f399edf32507174e870
-  pasteboard: 278d8100149f940fb795d6b3a74f0720c890ecb7
-  photo_manager: 93cc83778e33d5fd49dfd7e34b73f8f5a4f10aaf
-  rust_lib_localsend_app: 293779a82668308386129c9669c081d201d3e278
-  screen_retriever_macos: c5508cc3c66ff0d4db650480cf0ab691e220d933
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  tray_manager: 19c369010e59c073f13b82354d78a35f7972d609
-  uri_content: 6c7c098bcc83078659b4d274f42db92691eb9123
-  url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd
-  video_player_avfoundation: 3453f792138786248960ca029747fcd9f318ef52
-  wakelock_plus: 917609be14d812ddd9e9528876538b2263aaa03b
-  window_manager: b729e31d38fb04905235df9ea896128991cad99e
+  desktop_drop: 69eeff437544aa619c8db7f4481b3a65f7696898
+  device_info_plus: 1b14eed9bf95428983aed283a8d51cce3d8c4215
+  dynamic_color: 2eaa27267de1ca20d879fbd6e01259773fb1670f
+  file_selector_macos: cc3858c981fe6889f364731200d6232dac1d812d
+  FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
+  gal: 61e868295d28fe67ffa297fae6dacebf56fd53e1
+  in_app_purchase_storekit: 8c3b0b3eb1b0f04efbff401c3de6266d4258d433
+  network_info_plus: 2cb02d8435635eae13b3b79279681985121cf30c
+  open_dir_macos: 9649018f88e71eb9fb8aa3d95caec30a73c08c5b
+  package_info_plus: 12f1c5c2cfe8727ca46cbd0b26677728972d9a5b
+  pasteboard: 9b69dba6fedbb04866be632205d532fe2f6b1d99
+  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  photo_manager: ff695c7a1dd5bc379974953a2b5c0a293f7c4c8a
+  rhttp: 337afda4c3e4df31087160719ffca6452c225cc2
+  screen_retriever_macos: 776e0fa5d42c6163d2bf772d22478df4b302b161
+  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
+  tray_manager: 9064e219c56d75c476e46b9a21182087930baf90
+  uri_content: bfedc2e58f0ee4de88a63e5bcb826398389b22cb
+  url_launcher_macos: c82c93949963e55b228a30115bd219499a6fe404
+  video_player_avfoundation: 7c6c11d8470e1675df7397027218274b6d2360b3
+  wakelock_plus: 4783562c9a43d209c458cb9b30692134af456269
+  window_manager: 3a1844359a6295ab1e47659b1a777e36773cd6e8
 
 PODFILE CHECKSUM: 5c6550f5101fcba381ddb97e2135e4cacca4f31f
 

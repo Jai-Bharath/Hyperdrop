@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>LSUIElement</key>
-	<true/>
     <key>AppIdentifierPrefix</key>
 	<string>$(AppIdentifierPrefix)</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -71,8 +69,6 @@
         <string>ja</string>
         <string>km</string>
         <string>ko</string>
-        <string>lo</string>
-        <string>ml</string>
         <string>mn</string>
         <string>ms</string>
         <string>ne</string>
@@ -93,7 +89,6 @@
         <string>tr</string>
         <string>uk</string>
         <string>ur</string>
-        <string>uz</string>
         <string>vi</string>
         <string>zh-CN</string>
         <string>zh-HK</string>
@@ -147,7 +142,7 @@
                 <string>Send to LocalSend</string>
             </dict>
             <key>NSMessage</key>
-            <string>handleSendTextService</string>
+            <string>handleTextDropEvent</string>
             <key>NSPortName</key>
             <string>LocalSend</string>
             <key>NSSendTypes</key>

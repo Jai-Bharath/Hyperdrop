@@ -1,41 +1,34 @@
 import 'package:collection/collection.dart';
+import 'package:common/isolate.dart';
+import 'package:common/model/device.dart';
 import 'package:flutter/material.dart';
 import 'package:localsend_app/gen/strings.g.dart';
 import 'package:localsend_app/model/persistence/color_mode.dart';
 import 'package:localsend_app/model/send_mode.dart';
 import 'package:localsend_app/model/state/settings_state.dart';
 import 'package:localsend_app/provider/persistence_provider.dart';
-import 'package:localsend_isolates/isolate.dart';
-import 'package:localsend_isolates/model/device.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 
 final _listEq = const ListEquality().equals;
 
-final settingsProvider = NotifierProvider<SettingsService, SettingsState>(
-  (ref) {
-    return SettingsService(ref.read(persistenceProvider));
-  },
-  onChanged: (_, next, ref) {
-    final syncState = ref.read(parentIsolateProvider).syncState;
-    if (_listEq(syncState.networkWhitelist, next.networkWhitelist) &&
-        _listEq(syncState.networkBlacklist, next.networkBlacklist) &&
-        syncState.multicastGroup == next.multicastGroup &&
-        syncState.discoveryTimeout == next.discoveryTimeout) {
-      return;
-    }
+final settingsProvider = NotifierProvider<SettingsService, SettingsState>((ref) {
+  return SettingsService(ref.read(persistenceProvider));
+}, onChanged: (_, next, ref) {
+  final syncState = ref.read(parentIsolateProvider).syncState;
+  if (_listEq(syncState.networkWhitelist, next.networkWhitelist) &&
+      _listEq(syncState.networkBlacklist, next.networkBlacklist) &&
+      syncState.multicastGroup == next.multicastGroup &&
+      syncState.discoveryTimeout == next.discoveryTimeout) {
+    return;
+  }
 
-    ref
-        .redux(parentIsolateProvider)
-        .dispatch(
-          IsolateSyncSettingsAction(
-            networkWhitelist: next.networkWhitelist,
-            networkBlacklist: next.networkBlacklist,
-            multicastGroup: next.multicastGroup,
-            discoveryTimeout: next.discoveryTimeout,
-          ),
-        );
-  },
-);
+  ref.redux(parentIsolateProvider).dispatch(IsolateSyncSettingsAction(
+        networkWhitelist: next.networkWhitelist,
+        networkBlacklist: next.networkBlacklist,
+        multicastGroup: next.multicastGroup,
+        discoveryTimeout: next.discoveryTimeout,
+      ));
+});
 
 class SettingsService extends PureNotifier<SettingsState> {
   final PersistenceService _persistence;
@@ -44,33 +37,33 @@ class SettingsService extends PureNotifier<SettingsState> {
 
   @override
   SettingsState init() => SettingsState(
-    showToken: _persistence.getShowToken(),
-    alias: _persistence.getAlias(),
-    theme: _persistence.getTheme(),
-    colorMode: _persistence.getColorMode(),
-    locale: _persistence.getLocale(),
-    port: _persistence.getPort(),
-    networkWhitelist: _persistence.getNetworkWhitelist(),
-    networkBlacklist: _persistence.getNetworkBlacklist(),
-    multicastGroup: _persistence.getMulticastGroup(),
-    destination: _persistence.getDestination(),
-    saveToGallery: _persistence.isSaveToGallery(),
-    saveToHistory: _persistence.isSaveToHistory(),
-    quickSave: _persistence.isQuickSave(),
-    quickSaveFromFavorites: _persistence.isQuickSaveFromFavorites(),
-    receivePin: _persistence.getReceivePin(),
-    autoFinish: _persistence.isAutoFinish(),
-    minimizeToTray: _persistence.isMinimizeToTray(),
-    https: _persistence.isHttps(),
-    sendMode: _persistence.getSendMode(),
-    saveWindowPlacement: _persistence.getSaveWindowPlacement(),
-    enableAnimations: _persistence.getEnableAnimations(),
-    deviceType: _persistence.getDeviceType(),
-    deviceModel: _persistence.getDeviceModel(),
-    shareViaLinkAutoAccept: _persistence.getShareViaLinkAutoAccept(),
-    discoveryTimeout: _persistence.getDiscoveryTimeout(),
-    advancedSettings: _persistence.getAdvancedSettingsEnabled(),
-  );
+        showToken: _persistence.getShowToken(),
+        alias: _persistence.getAlias(),
+        theme: _persistence.getTheme(),
+        colorMode: _persistence.getColorMode(),
+        locale: _persistence.getLocale(),
+        port: _persistence.getPort(),
+        networkWhitelist: _persistence.getNetworkWhitelist(),
+        networkBlacklist: _persistence.getNetworkBlacklist(),
+        multicastGroup: _persistence.getMulticastGroup(),
+        destination: _persistence.getDestination(),
+        saveToGallery: _persistence.isSaveToGallery(),
+        saveToHistory: _persistence.isSaveToHistory(),
+        quickSave: _persistence.isQuickSave(),
+        quickSaveFromFavorites: _persistence.isQuickSaveFromFavorites(),
+        receivePin: _persistence.getReceivePin(),
+        autoFinish: _persistence.isAutoFinish(),
+        minimizeToTray: _persistence.isMinimizeToTray(),
+        https: _persistence.isHttps(),
+        sendMode: _persistence.getSendMode(),
+        saveWindowPlacement: _persistence.getSaveWindowPlacement(),
+        enableAnimations: _persistence.getEnableAnimations(),
+        deviceType: _persistence.getDeviceType(),
+        deviceModel: _persistence.getDeviceModel(),
+        shareViaLinkAutoAccept: _persistence.getShareViaLinkAutoAccept(),
+        discoveryTimeout: _persistence.getDiscoveryTimeout(),
+        advancedSettings: _persistence.getAdvancedSettingsEnabled(),
+      );
 
   Future<void> setAlias(String alias) async {
     await _persistence.setAlias(alias);

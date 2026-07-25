@@ -1,4 +1,6 @@
 import 'package:collection/collection.dart';
+import 'package:common/model/device.dart';
+import 'package:common/model/session_status.dart';
 import 'package:flutter/material.dart';
 import 'package:localsend_app/model/cross_file.dart';
 import 'package:localsend_app/model/persistence/favorite_device.dart';
@@ -19,8 +21,6 @@ import 'package:localsend_app/widget/dialogs/favorite_delete_dialog.dart';
 import 'package:localsend_app/widget/dialogs/favorite_dialog.dart';
 import 'package:localsend_app/widget/dialogs/favorite_edit_dialog.dart';
 import 'package:localsend_app/widget/dialogs/no_files_dialog.dart';
-import 'package:localsend_isolates/model/device.dart';
-import 'package:localsend_isolates/model/session_status.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 import 'package:routerino/routerino.dart';
 
@@ -56,7 +56,7 @@ final sendTabVmProvider = ViewProvider((ref) {
   final sendMode = ref.watch(settingsProvider.select((s) => s.sendMode));
   final selectedFiles = ref.watch(selectedSendingFilesProvider);
   final localIps = ref.watch(localIpProvider).localIps;
-  final nearbyDevices = ref.watch(nearbyDevicesProvider).allDevices.values;
+  final nearbyDevices = ref.watch(nearbyDevicesProvider).devices.values;
   final favoriteDevices = ref.watch(favoritesProvider);
 
   return SendTabVm(
@@ -76,9 +76,7 @@ final sendTabVmProvider = ViewProvider((ref) {
         builder: (_) => const AddressInputDialog(),
       );
       if (device != null && context.mounted) {
-        await ref
-            .notifier(sendProvider)
-            .startSession(
+        await ref.notifier(sendProvider).startSession(
               target: device,
               files: files,
               background: false,
@@ -97,9 +95,7 @@ final sendTabVmProvider = ViewProvider((ref) {
           return;
         }
 
-        await ref
-            .notifier(sendProvider)
-            .startSession(
+        await ref.notifier(sendProvider).startSession(
               target: device,
               files: files,
               background: false,
@@ -133,10 +129,7 @@ final sendTabVmProvider = ViewProvider((ref) {
           await ref.redux(favoritesProvider).dispatchAsync(RemoveFavoriteAction(deviceFingerprint: device.fingerprint));
         }
       } else {
-        await showDialog(
-          context: context,
-          builder: (_) => FavoriteEditDialog(prefilledDevice: device),
-        );
+        await showDialog(context: context, builder: (_) => FavoriteEditDialog(prefilledDevice: device));
       }
     },
     onTapDevice: (context, device) async {
@@ -145,9 +138,7 @@ final sendTabVmProvider = ViewProvider((ref) {
         return;
       }
 
-      await ref
-          .notifier(sendProvider)
-          .startSession(
+      await ref.notifier(sendProvider).startSession(
             target: device,
             files: selectedFiles,
             background: false,
@@ -183,9 +174,7 @@ final sendTabVmProvider = ViewProvider((ref) {
         ref.notifier(sendProvider).closeSession(session.sessionId);
       }
 
-      await ref
-          .notifier(sendProvider)
-          .startSession(
+      await ref.notifier(sendProvider).startSession(
             target: device,
             files: files,
             background: true,

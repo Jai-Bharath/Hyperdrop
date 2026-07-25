@@ -1,160 +1,162 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:gal/gal.dart';
 import 'package:legalize/legalize.dart';
 import 'package:localsend_app/util/file_path_helper.dart';
 import 'package:localsend_app/util/native/channel/android_channel.dart' as android_channel;
 import 'package:localsend_app/util/native/content_uri_helper.dart';
-import 'package:localsend_app/util/native/directories.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
+import 'package:saf_stream/saf_stream.dart';
+import 'package:saf_stream/saf_stream_platform_interface.dart';
 
 final _logger = Logger('FileSaver');
 
-/// Where an incoming file should be written to.
-/// The actual writing is done by the Rust server which receives either a
-/// plain file [path] or a writable [fileDescriptor] (Android SAF).
-class FileSaveTarget {
-  /// The path to write the file to. `null` when [fileDescriptor] is used.
-  final String? path;
+final _saf = SafStream();
 
-  /// A writable file descriptor (Android SAF). `null` when [path] is used.
-  final int? fileDescriptor;
-
-  /// The path or content URI of the destination, used for the history
-  /// and to locate the file after it has been written.
-  final String displayPath;
-
-  FileSaveTarget({
-    required this.path,
-    required this.fileDescriptor,
-    required this.displayPath,
-  });
-}
-
-/// Prepares the destination for an incoming file with [fileName].
-///
-/// When [saveToGallery] is true, the file is first written to the cache
-/// directory; call [saveCachedFileToGallery] after the file has been written.
-///
-/// On Android, destinations that cannot be written directly (SAF content URIs
-/// and SD cards) are created via the Storage Access Framework and a writable
-/// file descriptor is returned instead of a path.
-Future<FileSaveTarget> prepareFileSaveTarget({
-  required String destinationDirectory,
-  required String fileName,
+/// Saves the data [stream] to the [destinationPath].
+/// [onProgress] will be called on every 100 ms.
+Future<void> saveFile({
+  required String destinationPath,
+  required String? documentUri,
+  required String name,
   required bool saveToGallery,
   required bool isImage,
-  required Set<String> createdDirectories,
-  int? androidSdkInt,
+  required Stream<Uint8List> stream,
+  required int? androidSdkInt,
+  required DateTime? lastModified,
+  required DateTime? lastAccessed,
+  required void Function(int savedBytes) onProgress,
 }) async {
-  final parentDirectory = saveToGallery ? await getCacheDirectory() : destinationDirectory;
-
-  final (destinationPath, documentUri, finalName) = await digestFilePathAndPrepareDirectory(
-    parentDirectory: parentDirectory,
-    fileName: fileName,
-    createdDirectories: createdDirectories,
-  );
-
-  // When saveToGallery is enabled, the cache directory is used so SAF is not needed
   if (!saveToGallery && androidSdkInt != null) {
-    String? parentUri;
+    // Use SAF to save the file
+    // When saveToGallery is enabled, the destination is always the app's cache directory so we don't need to use SAF
+    SafWriteStreamInfo? safInfo;
+
     if (documentUri != null || destinationPath.startsWith('content://')) {
-      parentUri = documentUri ?? destinationPath;
+      _logger.info('Using SAF to save file to ${documentUri ?? destinationPath} as $name');
+      safInfo = await _saf.startWriteStream(
+        documentUri ?? destinationPath,
+        name,
+        lookupMimeType(name) ?? (isImage ? 'image/*' : '*/*'),
+      );
     } else {
       final sdCardPath = getSdCardPath(destinationPath);
       if (sdCardPath != null) {
+        // Use Android SAF to save the file to the SD card
         final uriString = ContentUriHelper.encodeTreeUri(sdCardPath.path.parentPath());
-        parentUri = 'content://com.android.externalstorage.documents/tree/${sdCardPath.sdCardId}:$uriString';
+        _logger.info('Using SAF to save file to $uriString');
+        safInfo = await _saf.startWriteStream(
+          'content://com.android.externalstorage.documents/tree/${sdCardPath.sdCardId}:$uriString',
+          name,
+          lookupMimeType(name) ?? (isImage ? 'image/*' : '*/*'),
+        );
       }
     }
 
-    if (parentUri != null) {
-      _logger.info('Using SAF to save file to $parentUri as $finalName');
-      final createdFile = await android_channel.createFileAndroid(
-        parentUri: parentUri,
-        fileName: finalName,
-        mimeType: lookupMimeType(finalName) ?? (isImage ? 'image/*' : '*/*'),
+    if (safInfo != null) {
+      final sessionID = safInfo.session;
+      await _saveFile(
+        destinationPath: destinationPath,
+        saveToGallery: saveToGallery,
+        isImage: isImage,
+        stream: stream,
+        onProgress: onProgress,
+        write: null,
+        writeAsync: (data) async {
+          await _saf.writeChunk(sessionID, data);
+        },
+        flush: null,
+        close: () async {
+          await _saf.endWriteStream(sessionID);
+        },
       );
-      return FileSaveTarget(
-        path: null,
-        fileDescriptor: createdFile.fileDescriptor,
-        displayPath: createdFile.uri,
-      );
+      return;
     }
   }
 
-  return FileSaveTarget(
-    path: destinationPath,
-    fileDescriptor: null,
-    displayPath: destinationPath,
+  final file = File(destinationPath);
+  final sink = file.openWrite();
+  await _saveFile(
+    destinationPath: destinationPath,
+    saveToGallery: saveToGallery,
+    isImage: isImage,
+    stream: stream,
+    onProgress: onProgress,
+    write: sink.add,
+    writeAsync: null,
+    flush: sink.flush,
+    close: () async {
+      await sink.close();
+      if (lastModified != null) {
+        try {
+          await file.setLastModified(lastModified);
+        } catch (_) {}
+      }
+      if (lastAccessed != null) {
+        try {
+          await file.setLastAccessed(lastAccessed);
+        } catch (_) {}
+      }
+    },
   );
 }
 
-/// Applies the file timestamps after the file has been written to a plain path.
-Future<void> applyFileTimestamps({
-  required FileSaveTarget target,
-  DateTime? lastModified,
-  DateTime? lastAccessed,
-}) async {
-  final path = target.path;
-  if (path == null) {
-    return;
-  }
-  final file = File(path);
-  if (lastModified != null) {
-    try {
-      await file.setLastModified(lastModified);
-    } catch (_) {}
-  }
-  if (lastAccessed != null) {
-    try {
-      await file.setLastAccessed(lastAccessed);
-    } catch (_) {}
-  }
-}
-
-/// Moves a file that has been written to the cache directory into the
-/// OS gallery (Photos/Videos).
-///
-/// If the gallery rejects the file (unsupported format, missing permission,
-/// not enough space, ...), the cached file is moved to [destinationDirectory]
-/// as fallback. At this point the file is already fully received and the
-/// sender was already told success, so failing the transfer would lose it.
-///
-/// Returns (savedToGallery, filePath):
-/// - savedToGallery: true if saved to gallery, false if saved to directory
-/// - filePath: absolute path to file (null when saved to gallery)
-Future<(bool, String?)> saveCachedFileToGallery({
-  required String cachedPath,
-  required String destinationDirectory,
-  required String fileName,
+Future<void> _saveFile({
+  required String destinationPath,
+  required bool saveToGallery,
   required bool isImage,
-  required Set<String> createdDirectories,
+  required Stream<Uint8List> stream,
+  required void Function(int savedBytes) onProgress,
+  required void Function(Uint8List data)? write,
+  required Future<void> Function(Uint8List data)? writeAsync,
+  required Future<void> Function()? flush,
+  required Future<void> Function() close,
 }) async {
   try {
-    isImage ? await Gal.putImage(cachedPath) : await Gal.putVideo(cachedPath);
-  } on GalException catch (e) {
-    _logger.warning('Could not save to gallery (${e.type.name}), moving to destination directory', e);
+    int savedBytes = 0;
+    int lastFlushedBytes = 0;
+    final stopwatch = Stopwatch()..start();
+    await for (final event in stream) {
+      if (writeAsync != null) {
+        await writeAsync(event);
+      } else {
+        write!(event);
+      }
 
-    final (fallbackPath, _, _) = await digestFilePathAndPrepareDirectory(
-      parentDirectory: destinationDirectory,
-      fileName: fileName,
-      createdDirectories: createdDirectories,
-    );
+      savedBytes += event.length;
+      if (stopwatch.elapsedMilliseconds >= 100) {
+        stopwatch.reset();
+        onProgress(savedBytes);
+      }
 
-    _logger.info('Moving file from $cachedPath to $fallbackPath');
-    await File(cachedPath).rename(fallbackPath);
-    return (false, fallbackPath);
+      const tenMB = 10 * 1024 * 1024;
+      if (flush != null && savedBytes >= lastFlushedBytes + tenMB) {
+        await flush();
+        lastFlushedBytes = savedBytes;
+      }
+    }
+
+    await flush?.call();
+    await close();
+
+    if (saveToGallery) {
+      isImage ? await Gal.putImage(destinationPath) : await Gal.putVideo(destinationPath);
+      await File(destinationPath).delete();
+    }
+
+    onProgress(savedBytes); // always emit final event
+  } catch (_) {
+    try {
+      await close();
+      await File(destinationPath).delete();
+    } catch (e) {
+      _logger.warning('Could not delete file', e);
+    }
+    rethrow;
   }
-
-  try {
-    await File(cachedPath).delete();
-  } catch (e) {
-    _logger.warning('Could not delete cached file after saving to gallery', e);
-  }
-  return (true, null);
 }
 
 /// If there is a file with the same name, then it appends a number to its file name

@@ -39,11 +39,7 @@ class ZoomDialog extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.fill,
               clipBehavior: Clip.antiAlias,
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: fontSize),
-              ),
+              child: Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: fontSize)),
             ),
           ),
           const SizedBox(height: 10),
@@ -59,7 +55,7 @@ class ZoomDialog extends StatelessWidget {
           if (listenIncomingWebSendRequests && webSendState != null)
             Builder(
               builder: (context) {
-                final pending = webSendState?.sessions.values.fold<int>(0, (prev, curr) => prev + (curr.pending ? 1 : 0)) ?? 0;
+                final pending = webSendState?.sessions.values.fold<int>(0, (prev, curr) => prev + (curr.responseHandler != null ? 1 : 0)) ?? 0;
                 if (pending != 0) {
                   return Padding(
                     padding: const EdgeInsets.only(top: 5),
@@ -80,7 +76,7 @@ class ZoomDialog extends StatelessWidget {
         TextButton(
           onPressed: () => context.pop(),
           child: Text(t.general.close),
-        ),
+        )
       ],
     );
   }

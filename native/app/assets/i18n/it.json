@@ -21,9 +21,9 @@
     "files": "File",
     "finished": "Completato",
     "hide": "Nascondi",
-    "off": "Disattivato",
+    "off": "disattivato",
     "offline": "Offline",
-    "on": "Attivato",
+    "on": "attivato",
     "online": "Online",
     "open": "Apri",
     "queue": "Coda",
@@ -140,12 +140,7 @@
       "portWarning": "Potresti non essere rilevato da altri dispositivi perché stai utilizzando una porta personalizzata. (predefinita: {defaultPort})",
       "encryption": "Crittografia",
       "multicastGroup": "Indirizzo Multicast",
-      "multicastGroupWarning": "Potresti non essere rilevato dagli altri dispositivi perché stai utilizzando un indirizzo multicast personalizzato. (predefinito: {defaultMulticast})",
-      "network": "Rete",
-      "networkOptions": {
-        "all": "Tutto",
-        "filtered": "Filtrato"
-      }
+      "multicastGroupWarning": "Potresti non essere rilevato dagli altri dispositivi perché stai utilizzando un indirizzo multicast personalizzato. (predefinito: {defaultMulticast})"
     },
     "other": {
       "title": "Altro",
@@ -232,14 +227,6 @@
       "count": "File: {curr} / {n}",
       "size": "Dimensione: {curr} / {n}",
       "speed": "Velocità: {speed}/s"
-    },
-    "remainingTime": {
-      "hours": "{h}h {m}m",
-      "days": "{d}d {h}h {m}m",
-      "@hours": "Usa 'h' come abbreviazione per ore e 'm' per minuti",
-      "@days": "Usa 'd' per giorni, 'h' per ore, e 'm' per minuti",
-      "seconds": "{n}:{ss}",
-      "minutes": "{n}:{ss}"
     }
   },
   "webSharePage": {
@@ -261,7 +248,7 @@
     "pendingRequests": "Richieste in sospeso: {n}"
   },
   "aboutPage": {
-    "title": "Informazioni su LocalSend",
+    "title": "Riguardo LocalSend",
     "description": [
       "LocalSend è un'app gratuita e open-source che consente di condividere file e messaggi in modo sicuro con dispositivi vicini sulla tua rete locale, senza bisogno di una connessione internet.",
       "Quest'app è disponibile su Android, iOS, macOS, Windows e Linux. Puoi trovare tutte le opzioni di download sulla homepage ufficiale."
@@ -454,12 +441,5 @@
     "sActionUseCameraHint": "usa fotocamera",
     "sNameDurationLabel": "durata",
     "sUnitAssetCountLabel": "conteggio"
-  },
-  "networkInterfacesPage": {
-    "title": "Interfacce di rete",
-    "info": "Per impostazione predefinita, LocalSend utilizza tutte le interfacce di rete disponibili. È possibile escludere le reti indesiderate. È necessario riavviare il server per applicare le modifiche.",
-    "preview": "Anteprima",
-    "whitelist": "Whitelist",
-    "blacklist": "Blacklist"
   }
 }

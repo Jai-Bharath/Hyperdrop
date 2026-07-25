@@ -1,6 +1,7 @@
 PODS:
   - connectivity_plus (0.0.1):
     - Flutter
+    - FlutterMacOS
   - device_info_plus (0.0.1):
     - Flutter
   - DKImagePickerController/Core (4.3.9):
@@ -56,12 +57,15 @@ PODS:
     - Flutter
   - pasteboard (0.0.1):
     - Flutter
-  - permission_handler_apple (9.4.8):
-    - Flutter
-  - photo_manager (3.10.0):
+  - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - rust_lib_localsend_app (0.0.1):
+  - permission_handler_apple (9.3.0):
+    - Flutter
+  - photo_manager (2.0.0):
+    - Flutter
+    - FlutterMacOS
+  - rhttp (0.0.1):
     - Flutter
   - SDWebImage (5.20.0):
     - SDWebImage/Core (= 5.20.0)
@@ -78,7 +82,7 @@ PODS:
     - Flutter
     - FlutterMacOS
   - SwiftyGif (5.4.5)
-  - system_settings_2 (3.0.0):
+  - system_settings (0.0.1):
     - Flutter
   - uri_content (0.0.1):
     - Flutter
@@ -91,7 +95,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
+  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/darwin`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - file_selector_ios (from `.symlinks/plugins/file_selector_ios/ios`)
@@ -103,13 +107,14 @@ DEPENDENCIES:
   - open_filex (from `.symlinks/plugins/open_filex/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - pasteboard (from `.symlinks/plugins/pasteboard/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
-  - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
-  - rust_lib_localsend_app (from `.symlinks/plugins/rust_lib_localsend_app/ios`)
+  - photo_manager (from `.symlinks/plugins/photo_manager/ios`)
+  - rhttp (from `.symlinks/plugins/rhttp/ios`)
   - share_handler_ios (from `.symlinks/plugins/share_handler_ios/ios`)
   - share_handler_ios_models (from `.symlinks/plugins/share_handler_ios/ios/Models`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - system_settings_2 (from `.symlinks/plugins/system_settings_2/ios`)
+  - system_settings (from `.symlinks/plugins/system_settings/ios`)
   - uri_content (from `.symlinks/plugins/uri_content/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
@@ -124,7 +129,7 @@ SPEC REPOS:
 
 EXTERNAL SOURCES:
   connectivity_plus:
-    :path: ".symlinks/plugins/connectivity_plus/ios"
+    :path: ".symlinks/plugins/connectivity_plus/darwin"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   file_picker:
@@ -147,20 +152,22 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/package_info_plus/ios"
   pasteboard:
     :path: ".symlinks/plugins/pasteboard/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   photo_manager:
-    :path: ".symlinks/plugins/photo_manager/darwin"
-  rust_lib_localsend_app:
-    :path: ".symlinks/plugins/rust_lib_localsend_app/ios"
+    :path: ".symlinks/plugins/photo_manager/ios"
+  rhttp:
+    :path: ".symlinks/plugins/rhttp/ios"
   share_handler_ios:
     :path: ".symlinks/plugins/share_handler_ios/ios"
   share_handler_ios_models:
     :path: ".symlinks/plugins/share_handler_ios/ios/Models"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
-  system_settings_2:
-    :path: ".symlinks/plugins/system_settings_2/ios"
+  system_settings:
+    :path: ".symlinks/plugins/system_settings/ios"
   uri_content:
     :path: ".symlinks/plugins/uri_content/ios"
   url_launcher_ios:
@@ -171,34 +178,35 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/wakelock_plus/ios"
 
 SPEC CHECKSUMS:
-  connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
-  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
+  connectivity_plus: 4c41c08fc6d7c91f63bc7aec70ffe3730b04f563
+  device_info_plus: bf2e3232933866d73fe290f2942f2156cdd10342
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
-  file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
-  file_selector_ios: ec57ec07954363dd730b642e765e58f199bb621a
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  gal: baecd024ebfd13c441269ca7404792a7152fde89
-  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
-  in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8
-  network_info_plus: cf61925ab5205dce05a4f0895989afdb6aade5fc
-  open_filex: 432f3cd11432da3e39f47fcc0df2b1603854eff1
-  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  pasteboard: 49088aeb6119d51f976a421db60d8e1ab079b63c
-  permission_handler_apple: 92d754bbaa7361d436db2d6c3c1c2a0fdcec462e
-  photo_manager: 93cc83778e33d5fd49dfd7e34b73f8f5a4f10aaf
-  rust_lib_localsend_app: e74fed7b12bd94b7fb63a29f9b6afdde78f6a0a7
+  file_picker: 09aa5ec1ab24135ccd7a1621c46c84134bfd6655
+  file_selector_ios: f0670c1064a8c8450e38145d8043160105d0b97c
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  gal: 61e868295d28fe67ffa297fae6dacebf56fd53e1
+  image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
+  in_app_purchase_storekit: 8c3b0b3eb1b0f04efbff401c3de6266d4258d433
+  network_info_plus: 6613d9d7cdeb0e6f366ed4dbe4b3c51c52d567a9
+  open_filex: 6e26e659846ec990262224a12ef1c528bb4edbe4
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
+  pasteboard: 982969ebaa7c78af3e6cc7761e8f5e77565d9ce0
+  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  photo_manager: ff695c7a1dd5bc379974953a2b5c0a293f7c4c8a
+  rhttp: 367a8162e63311c6dde543169b591cc04454dcd6
   SDWebImage: 73c6079366fea25fa4bb9640d5fb58f0893facd8
-  share_handler_ios: e2244e990f826b2c8eaa291ac3831569438ba0fb
+  share_handler_ios: 6dd3a4ac5ca0d955274aec712ba0ecdcaf583e7c
   share_handler_ios_models: fc638c9b4330dc7f082586c92aee9dfa0b87b871
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  system_settings_2: 5c4a7aaed51dfd09b46aaa9d36bb57f578642191
-  uri_content: 70a99850f89322ef5eca2e69451ee38221b917ec
-  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
-  video_player_avfoundation: 3453f792138786248960ca029747fcd9f318ef52
-  wakelock_plus: e29112ab3ef0b318e58cfa5c32326458be66b556
+  system_settings: 8f5cdbfa72c677fc8d665b863bcc20d393d87e9d
+  uri_content: cfb4388dc7ba5fd8face872f4a953db1ccdf88e9
+  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
+  video_player_avfoundation: 7c6c11d8470e1675df7397027218274b6d2360b3
+  wakelock_plus: 78ec7c5b202cab7761af8e2b2b3d0671be6c4ae1
 
-PODFILE CHECKSUM: 3a4ace682762b60a381ecc086ce3de34ab033988
+PODFILE CHECKSUM: 246d7132974b3d318257419d9c394e57ebbf12e8
 
 COCOAPODS: 1.16.2

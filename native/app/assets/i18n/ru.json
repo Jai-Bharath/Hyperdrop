@@ -213,7 +213,7 @@
     "saveToGalleryOff": "Отключено автоматически, поскольку есть папки."
   },
   "sendPage": {
-    "waiting": "Ожидание ответа…",
+    "waiting": "Ожидание ответа...",
     "rejected": "Получатель отклонил запрос.",
     "tooManyAttempts": "@:web.tooManyAttempts",
     "busy": "Получатель занят другим запросом."
@@ -232,20 +232,12 @@
       "count": "Файлов: {curr} / {n}",
       "size": "Размер: {curr} / {n}",
       "speed": "Скорость: {speed}/s"
-    },
-    "remainingTime": {
-      "seconds": "{n}:{ss}",
-      "minutes": "{n}:{ss}",
-      "hours": "{h}ч {m}мин",
-      "days": "{d}д {h}ч {m}мин",
-      "@hours": "Используйте \"h\" для обозначения часов, а \"m\" для минут",
-      "@days": "Используйте \"d\" для дней, \"h\" для часов и \"m\" для минут"
     }
   },
   "webSharePage": {
     "title": "Поделиться по ссылке",
-    "loading": "Запуск сервера…",
-    "stopping": "Остановка сервера…",
+    "loading": "Запуск сервера...",
+    "stopping": "Остановка сервера...",
     "error": "При запуске сервера произошла ошибка.",
     "openLink": {
       "one": "Откройте эту ссылку в браузере:",
@@ -282,7 +274,7 @@
     "title": "История изменений"
   },
   "aliasGenerator(ignoreMissing, ignoreGpt)": {
-    "@info": "Разные локализации могут использовать разные слова, поэтому соответствие может быть не 1 к 1"
+    "@info": "Different locales may have different words, it may not match 1:1"
   },
   "dialogs": {
     "addFile": {
@@ -425,7 +417,7 @@
     "size": "Размер"
   },
   "assetPicker": {
-    "@info": "Переводы для инструмента выбора медиа для Android и iPhone",
+    "@info": "Translations for the Media selection tool for Android and iPhone",
     "confirm": "Подтвердить",
     "cancel": "Отменить",
     "edit": "Редактировать",

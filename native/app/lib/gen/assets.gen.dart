@@ -1,5 +1,3 @@
-// dart format width=150
-
 /// GENERATED CODE - DO NOT MODIFY BY HAND
 /// *****************************************************
 ///  FlutterGen
@@ -7,7 +5,7 @@
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
-// ignore_for_file: deprecated_member_use,directives_ordering,implicit_dynamic_list_literal,unnecessary_import
+// ignore_for_file: directives_ordering,unnecessary_import,implicit_dynamic_list_literal,deprecated_member_use
 
 import 'package:flutter/widgets.dart';
 
@@ -29,9 +27,6 @@ class $AssetsImgGen {
   /// File path: assets/img/logo-32.png
   AssetGenImage get logo32 => const AssetGenImage('assets/img/logo-32.png');
 
-  /// File path: assets/img/logo-512-white.png
-  AssetGenImage get logo512White => const AssetGenImage('assets/img/logo-512-white.png');
-
   /// File path: assets/img/logo-512.png
   AssetGenImage get logo512 => const AssetGenImage('assets/img/logo-512.png');
 
@@ -39,7 +34,7 @@ class $AssetsImgGen {
   String get logo => 'assets/img/logo.ico';
 
   /// List of all assets
-  List<dynamic> get values => [logo128, logo256, logo32Black, logo32White, logo32, logo512White, logo512, logo];
+  List<dynamic> get values => [logo128, logo256, logo32Black, logo32White, logo32, logo512, logo];
 }
 
 class $AssetsWebGen {
@@ -59,7 +54,7 @@ class $AssetsWebGen {
 }
 
 class Assets {
-  const Assets._();
+  Assets._();
 
   static const String changelog = 'assets/CHANGELOG.md';
   static const $AssetsImgGen img = $AssetsImgGen();
@@ -70,13 +65,16 @@ class Assets {
 }
 
 class AssetGenImage {
-  const AssetGenImage(this._assetName, {this.size, this.flavors = const {}, this.animation});
+  const AssetGenImage(
+    this._assetName, {
+    this.size,
+    this.flavors = const {},
+  });
 
   final String _assetName;
 
   final Size? size;
   final Set<String> flavors;
-  final AssetGenImageAnimation? animation;
 
   Image image({
     Key? key,
@@ -99,7 +97,7 @@ class AssetGenImage {
     bool gaplessPlayback = true,
     bool isAntiAlias = false,
     String? package,
-    FilterQuality filterQuality = FilterQuality.medium,
+    FilterQuality filterQuality = FilterQuality.low,
     int? cacheWidth,
     int? cacheHeight,
   }) {
@@ -131,19 +129,18 @@ class AssetGenImage {
     );
   }
 
-  ImageProvider provider({AssetBundle? bundle, String? package}) {
-    return AssetImage(_assetName, bundle: bundle, package: package);
+  ImageProvider provider({
+    AssetBundle? bundle,
+    String? package,
+  }) {
+    return AssetImage(
+      _assetName,
+      bundle: bundle,
+      package: package,
+    );
   }
 
   String get path => _assetName;
 
   String get keyName => _assetName;
-}
-
-class AssetGenImageAnimation {
-  const AssetGenImageAnimation({required this.isAnimation, required this.duration, required this.frames});
-
-  final bool isAnimation;
-  final Duration duration;
-  final int frames;
 }

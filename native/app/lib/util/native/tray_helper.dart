@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:localsend_app/gen/assets.gen.dart';
 import 'package:localsend_app/gen/strings.g.dart';
@@ -72,11 +71,7 @@ Future<void> hideToTray() async {
   }
 
   // Disable animations
-  try {
-    RefenaScope.defaultRef.notifier(sleepProvider).setState((_) => true);
-  } catch (e) {
-    _logger.warning('Failed to update sleep state (Refena not yet initialized)', e);
-  }
+  RefenaScope.defaultRef.notifier(sleepProvider).setState((_) => true);
 }
 
 Future<void> showFromTray() async {
@@ -86,15 +81,10 @@ Future<void> showFromTray() async {
     // This will crash on Windows
     // https://github.com/localsend/localsend/issues/32
     await windowManager.setSkipTaskbar(false);
-    appWindow.show();
   }
 
   // Enable animations
-  try {
-    RefenaScope.defaultRef.notifier(sleepProvider).setState((_) => false);
-  } catch (e) {
-    _logger.warning('Failed to update sleep state (Refena not yet initialized)', e);
-  }
+  RefenaScope.defaultRef.notifier(sleepProvider).setState((_) => false);
 }
 
 Future<void> destroyTray() async {

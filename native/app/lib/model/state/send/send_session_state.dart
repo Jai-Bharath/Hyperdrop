@@ -1,29 +1,20 @@
+import 'package:common/model/device.dart';
+import 'package:common/model/session_status.dart';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:localsend_app/model/state/send/sending_file.dart';
-import 'package:localsend_app/model/state/server/receive_session_state.dart';
-import 'package:localsend_isolates/model/device.dart';
-import 'package:localsend_isolates/model/session_status.dart';
 
 part 'send_session_state.mapper.dart';
 
 @MappableClass()
-class SendSessionState with SendSessionStateMappable implements SessionState {
+class SendSessionState with SendSessionStateMappable {
   final String sessionId;
   final String? remoteSessionId; // v2
   final bool background;
-
-  @override
   final SessionStatus status;
-
   final Device target;
   final Map<String, SendingFile> files; // file id as key
-
-  @override
   final int? startTime;
-
-  @override
   final int? endTime;
-
   final List<SendingTask>? sendingTasks; // used to cancel tasks
   final String? errorMessage;
 
@@ -50,9 +41,11 @@ class SendSessionState with SendSessionStateMappable implements SessionState {
 }
 
 class SendingTask {
+  final int isolateIndex;
   final int taskId;
 
   SendingTask({
+    required this.isolateIndex,
     required this.taskId,
   });
 }

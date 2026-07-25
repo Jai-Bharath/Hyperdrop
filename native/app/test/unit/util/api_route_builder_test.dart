@@ -1,5 +1,5 @@
-import 'package:localsend_isolates/api_route_builder.dart';
-import 'package:localsend_isolates/model/device.dart';
+import 'package:common/api_route_builder.dart';
+import 'package:common/model/device.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -46,7 +46,6 @@ Device _target({
   required bool https,
 }) {
   return Device(
-    signalingId: null,
     ip: '0.0.0.0',
     version: version,
     port: 8080,
@@ -56,6 +55,5 @@ Device _target({
     deviceModel: 'deviceModel',
     deviceType: DeviceType.desktop,
     download: false,
-    discoveryMethods: {},
   );
 }

@@ -12,8 +12,7 @@ import 'package:uuid/uuid.dart';
 
 enum _QuickAction {
   counter,
-  random
-  ;
+  random;
 
   String get label {
     switch (this) {
@@ -107,12 +106,11 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> with Refena {
             ),
             const SizedBox(height: 5),
             Visibility(
-              visible: !_isValid,
-              child: Text(
-                t.sanitization.invalid,
-                style: TextStyle(color: Theme.of(context).colorScheme.warning),
-              ),
-            ),
+                visible: !_isValid,
+                child: Text(
+                  t.sanitization.invalid,
+                  style: TextStyle(color: Theme.of(context).colorScheme.warning),
+                )),
             const SizedBox(height: 10),
             LabeledCheckbox(
               label: t.dialogs.quickActions.padZero,
@@ -155,9 +153,7 @@ class _QuickActionsDialogState extends State<QuickActionsDialog> with Refena {
                 if (!_isValid) {
                   return;
                 }
-                ref
-                    .notifier(selectedReceivingFilesProvider)
-                    .applyCounter(
+                ref.notifier(selectedReceivingFilesProvider).applyCounter(
                       prefix: _prefix,
                       padZero: _padZero,
                       sortFirst: _sortBeforehand,

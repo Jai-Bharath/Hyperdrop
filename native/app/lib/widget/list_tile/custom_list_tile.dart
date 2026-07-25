@@ -50,7 +50,7 @@ class CustomListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              ?trailing,
+              if (trailing != null) trailing!,
             ],
           ),
         ),

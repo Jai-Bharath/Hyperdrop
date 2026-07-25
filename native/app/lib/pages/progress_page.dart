@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:common/model/dto/file_dto.dart';
+import 'package:common/model/file_status.dart';
+import 'package:common/model/session_status.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:localsend_app/config/theme.dart';
 import 'package:localsend_app/gen/strings.g.dart';
-import 'package:localsend_app/model/state/server/receive_session_state.dart';
 import 'package:localsend_app/provider/network/send_provider.dart';
 import 'package:localsend_app/provider/network/server/server_provider.dart';
 import 'package:localsend_app/provider/progress_provider.dart';
@@ -18,14 +19,10 @@ import 'package:localsend_app/util/native/open_folder.dart';
 import 'package:localsend_app/util/native/platform_check.dart';
 import 'package:localsend_app/util/native/taskbar_helper.dart';
 import 'package:localsend_app/util/ui/nav_bar_padding.dart';
-import 'package:localsend_app/widget/custom_basic_appbar.dart';
 import 'package:localsend_app/widget/custom_progress_bar.dart';
 import 'package:localsend_app/widget/dialogs/cancel_session_dialog.dart';
 import 'package:localsend_app/widget/dialogs/error_dialog.dart';
 import 'package:localsend_app/widget/file_thumbnail.dart';
-import 'package:localsend_isolates/model/dto/file_dto.dart';
-import 'package:localsend_isolates/model/file_status.dart';
-import 'package:localsend_isolates/model/session_status.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 import 'package:routerino/routerino.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -73,26 +70,14 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
 
       // Periodically call WakelockPlus.enable() to keep the screen awake
       _wakelockPlusTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-        final finished =
-            ref.read(serverProvider)?.session?.files.values.map((e) => e.status).isFinishedOrSkipped ??
-            ref.read(sendProvider)[widget.sessionId]?.files.values.map((e) => e.status).isFinishedOrSkipped ??
-            true;
-        if (finished) {
-          timer.cancel();
-          try {
-            unawaited(WakelockPlus.disable());
-          } catch (_) {}
-        } else {
-          try {
-            unawaited(WakelockPlus.enable());
-          } catch (_) {}
-        }
+        try {
+          unawaited(WakelockPlus.enable());
+        } catch (_) {}
       });
 
       if (ref.read(settingsProvider).autoFinish) {
         _finishTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          final finished =
-              ref.read(serverProvider)?.session?.files.values.map((e) => e.status).isFinishedOrSkipped ??
+          final finished = ref.read(serverProvider)?.session?.files.values.map((e) => e.status).isFinishedOrSkipped ??
               ref.read(sendProvider)[widget.sessionId]?.files.values.map((e) => e.status).isFinishedOrSkipped ??
               true;
           if (finished) {
@@ -182,22 +167,12 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
   Widget build(BuildContext context) {
     final progressNotifier = ref.watch(progressProvider);
     final currBytes = _files.fold<int>(
-      0,
-      (prev, curr) => prev + ((progressNotifier.getProgress(sessionId: widget.sessionId, fileId: curr.id) * curr.size).round()),
-    );
+        0, (prev, curr) => prev + ((progressNotifier.getProgress(sessionId: widget.sessionId, fileId: curr.id) * curr.size).round()));
 
     final receiveSession = ref.watch(serverProvider.select((s) => s?.session));
     final sendSession = ref.watch(sendProvider)[widget.sessionId];
 
-    final SessionState? commonSessionState = receiveSession ?? sendSession;
-
-    if (commonSessionState == null) {
-      return Scaffold(
-        body: Container(),
-      );
-    }
-
-    final status = commonSessionState.status;
+    final SessionStatus? status = receiveSession?.status ?? sendSession?.status;
 
     if (status == SessionStatus.sending) {
       // ignore: discarded_futures
@@ -208,9 +183,15 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
       TaskbarHelper.visualizeStatus(status);
     }
 
+    if (status == null) {
+      return Scaffold(
+        body: Container(),
+      );
+    }
+
     final title = receiveSession != null ? t.progressPage.titleReceiving : t.progressPage.titleSending;
-    final startTime = commonSessionState.startTime;
-    final endTime = commonSessionState.endTime;
+    final startTime = receiveSession?.startTime ?? sendSession?.startTime;
+    final endTime = receiveSession?.endTime ?? sendSession?.endTime;
     final int? speedInBytes;
     if (startTime != null && currBytes >= 500 * 1024) {
       speedInBytes = getFileSpeed(start: startTime, end: endTime ?? DateTime.now().millisecondsSinceEpoch, bytes: currBytes);
@@ -238,7 +219,11 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
       },
       canPop: false,
       child: Scaffold(
-        appBar: widget.showAppBar ? basicLocalSendAppbar(title) : null,
+        appBar: widget.showAppBar
+            ? AppBar(
+                title: Text(title),
+              )
+            : null,
         body: Stack(
           children: [
             ListView.builder(
@@ -280,9 +265,9 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
                                     recognizer: checkPlatform([TargetPlatform.iOS])
                                         ? null
                                         : (TapGestureRecognizer()
-                                            ..onTap = () async {
-                                              await openFolder(folderPath: receiveSession.destinationDirectory);
-                                            }),
+                                          ..onTap = () async {
+                                            await openFolder(folderPath: receiveSession.destinationDirectory);
+                                          }),
                                   ),
                                 ],
                               ),
@@ -414,10 +399,9 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
                           IconButton(
                             icon: const Icon(Icons.refresh),
                             onPressed: () async {
-                              await ref
-                                  .notifier(sendProvider)
-                                  .sendFile(
+                              await ref.notifier(sendProvider).sendFile(
                                     sessionId: widget.sessionId,
+                                    isolateIndex: 0,
                                     file: sendSession.files[file.id]!,
                                     isRetry: true,
                                   );
@@ -469,24 +453,18 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    t.progressPage.total.count(
-                                      curr: finishedCount,
-                                      n: _selectedFiles.length,
-                                    ),
-                                  ),
-                                  Text(
-                                    t.progressPage.total.size(
-                                      curr: currBytes.asReadableFileSize,
-                                      n: _totalBytes == double.maxFinite.toInt() ? '-' : _totalBytes.asReadableFileSize,
-                                    ),
-                                  ),
+                                  Text(t.progressPage.total.count(
+                                    curr: finishedCount,
+                                    n: _selectedFiles.length,
+                                  )),
+                                  Text(t.progressPage.total.size(
+                                    curr: currBytes.asReadableFileSize,
+                                    n: _totalBytes == double.maxFinite.toInt() ? '-' : _totalBytes.asReadableFileSize,
+                                  )),
                                   if (speedInBytes != null)
-                                    Text(
-                                      t.progressPage.total.speed(
-                                        speed: speedInBytes.asReadableFileSize,
-                                      ),
-                                    ),
+                                    Text(t.progressPage.total.speed(
+                                      speed: speedInBytes.asReadableFileSize,
+                                    )),
                                 ],
                               ),
                             ),
@@ -507,16 +485,14 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
                                 style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.onSurface),
                                 onPressed: () => _exit(closeSession: true),
                                 icon: Icon(status == SessionStatus.sending ? Icons.close : Icons.check_circle),
-                                label: Text(
-                                  status == SessionStatus.sending
-                                      ? t.general.cancel
-                                      : _finishTimer != null
-                                      ? '${t.general.done} ($_finishCounter)'
-                                      : t.general.done,
-                                ),
+                                label: Text(status == SessionStatus.sending
+                                    ? t.general.cancel
+                                    : _finishTimer != null
+                                        ? '${t.general.done} ($_finishCounter)'
+                                        : t.general.done),
                               ),
                             ],
-                          ),
+                          )
                         ],
                       ),
                     ),
@@ -524,15 +500,6 @@ class _ProgressPageState extends State<ProgressPage> with Refena {
                 ),
               ),
             ),
-            checkPlatform([TargetPlatform.macOS])
-                ? Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 40,
-                    child: MoveWindow(),
-                  )
-                : SizedBox(),
           ],
         ),
       ),

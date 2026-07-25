@@ -2,33 +2,33 @@
   "locale": "العربية",
   "appName": "LocalSend",
   "general": {
-    "accept": "اقبل",
+    "accept": "قبول",
     "accepted": "قُبلت",
     "add": "إضافة",
     "advanced": "متقدم",
-    "cancel": "ألغِ",
-    "close": "أغلِق",
-    "confirm": "أكِّد",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
     "continueStr": "أكمل",
-    "copy": "انسخ",
-    "copiedToClipboard": "نُسخ إلى الحافظة",
+    "copy": "إنسخ",
+    "copiedToClipboard": "نسخ إلى الحافظة",
     "decline": "ارفض",
-    "done": "تم",
-    "delete": "احذف",
-    "edit": "عدِّل",
+    "done": "انتهى",
+    "delete": "حذف",
+    "edit": "تعديل",
     "error": "خطأ",
     "example": "مثال",
     "files": "ملفات",
     "finished": "انتهى",
-    "hide": "أخفِ",
+    "hide": "إخفاء",
     "off": "إيقاف",
     "offline": "غير متصل بالانترنت",
     "on": "تشغيل",
     "online": "متصل بالانترنت",
-    "open": "افتح",
-    "queue": "صفّ",
+    "open": "مفتوح",
+    "queue": "طابور",
     "quickSave": "حفظ سريع",
-    "quickSaveFromFavorites": "حفظ سريع لـ \"المفضلات\"",
+    "quickSaveFromFavorites": "حفظ سريع لـ \"Favorites\"",
     "renamed": "اعادة تسمية",
     "reset": "إعادة ضبط",
     "restart": "إعادة تشغيل",
@@ -81,27 +81,27 @@
       "link": "مشاركة عبر الرابط"
     },
     "sendModeHelp": "شرح",
-    "help": "يُرجى التأكد من أن الهدف المطلوب موجود أيضًا في نفس شبكة الواي فاي.",
+    "help": "يرجى التأكد من أن الهدف المطلوب موجود أيضًا في نفس شبكة wifi.",
     "placeItems": "ضع العناصر للمشاركة."
   },
   "settingsTab": {
     "title": "الإعدادات",
     "general": {
       "title": "عام",
-      "brightness": "السمة",
+      "brightness": "سمة",
       "brightnessOptions": {
         "system": "نظام",
-        "dark": "داكنة",
-        "light": "فاتحة"
+        "dark": "داكن",
+        "light": "فاتح"
       },
-      "color": "اللون",
+      "color": "لون",
       "colorOptions": {
         "system": "النظام",
         "oled": "OLED"
       },
-      "language": "اللغة",
+      "language": "لغة",
       "languageOptions": {
-        "system": "النظام"
+        "system": "نظام"
       },
       "saveWindowPlacement": "إنهاء: حفظ موقع النافذة",
       "saveWindowPlacementWindows": "حفظ موضع النافذة بعد الخروج",
@@ -117,7 +117,7 @@
       "quickSaveFromFavorites": "@:general.quickSaveFromFavorites",
       "requirePin": "@:webSharePage.requirePin",
       "autoFinish": "إنهاء تلقائي",
-      "destination": "احفظ في المجلد",
+      "destination": "حفظ في",
       "downloads": "(التنزيلات)",
       "saveToGallery": "حفظ الوسائط في المعرض",
       "saveToHistory": "حفظ في التاريخ"
@@ -138,7 +138,7 @@
       "useSystemName": "استخدم اسم النظام",
       "generateRandomAlias": "ولّد كنية عشوائية",
       "portWarning": "ربما لا يتم الكشف عنك من قبل الأجهزة الأخرى لأنك تستخدم منفذ مخصص. (الافتراضي: {defaultPort})",
-      "encryption": "التعمية",
+      "encryption": "التشفير",
       "multicastGroup": "فرق البث المتعدد",
       "multicastGroupWarning": "ربما لا يتم الكشف عنك من قبل الأجهزة الأخرى لأنك تستخدم عنوان بث متعدد مخصص. (الافتراضي: {defaultMulticast})",
       "networkOptions": {
@@ -168,23 +168,23 @@
     },
     "noDiscovery": {
       "symptom": "هذا الجهاز لا يمكنه اكتشاف الأجهزة الأخرى.",
-      "solution": "يُرجى التأكد من أن جميع الأجهزة متصلة بنفس شبكة الواي فاي وتشارك نفس التكوين (المنفذ، عنوان البث المتعدد، التعمية). يمكنك محاولة كتابة عنوان IP للجهاز المستهدف يدويًا. إذا نجح ذلك، فكر في إضافة هذا الجهاز إلى قائمة المفضلات حتى يتم اكتشافه تلقائيًا في المستقبل."
+      "solution": "يرجى التأكد من أن جميع الأجهزة متصلة بنفس شبكة Wi-Fi وتشارك نفس التكوين (المنفذ، عنوان البث المتعدد، التشفير). يمكنك محاولة كتابة عنوان IP للجهاز المستهدف يدويًا. إذا نجح ذلك، فكر في إضافة هذا الجهاز إلى قائمة المفضلة حتى يتم اكتشافه تلقائيًا في المستقبل."
     },
     "noConnection": {
       "symptom": "لا يمكن للجهازين اكتشاف بعضهما البعض ولا يمكنهما مشاركة الملفات.",
-      "solution": "هل المشكلة موجودة على كِلا الجانبين؟ إذا كان الأمر كذلك، يجب التأكد من أن كِلا الجهازين متصلان بنفس شبكة الواي فاي ويشتركان في نفس الإعدادات (المنفذ، عنوان البث المتعدد، التعمية). قد تمنع شبكة الواي فاي الاتصال بين المشاركين بسبب عزل نقطة الوصول (AP Isolation). في هذه الحالة، يجب تعطيل هذا الخيار على الراوتر."
+      "solution": "هل المشكلة موجودة على الجانبين؟ في هذه الحالة ، يجب عليك التأكد من أن الجهازين في نفس شبكة الواي فاي ويشتركان في نفس التكوين (المنفذ وعنوان البث المتعدد والتشفير). قد لا يسمح الواي فاي بالاتصال بين المشاركين. في هذه الحالة ، يجب تمكين هذا الخيار على الجهاز التوجيه."
     }
   },
   "receiveHistoryPage": {
-    "title": "التاريخ",
-    "openFolder": "افتح المجلد",
-    "deleteHistory": "احذف التاريخ",
-    "empty": "التاريخ فارغ.",
+    "title": "السجل",
+    "openFolder": "فتح المجلد",
+    "deleteHistory": "حذف السجل",
+    "empty": "السجل فارغ.",
     "entryActions": {
-      "open": "افتح الملف",
-      "showInFolder": "اعرض في المجلد",
+      "open": "فتح الملف",
+      "showInFolder": "عرض في المجلد",
       "info": "معلومات",
-      "deleteFromHistory": "احذف من التاريخ"
+      "deleteFromHistory": "حذف من السجل"
     }
   },
   "apkPickerPage": {
@@ -194,7 +194,7 @@
     "apps": "{n} تطبيق"
   },
   "selectedFilesPage": {
-    "deleteAll": "احذف الكل"
+    "deleteAll": "حذف الكل"
   },
   "receivePage": {
     "subTitle": {
@@ -203,14 +203,14 @@
     },
     "subTitleMessage": "أرسل لك رسالة:",
     "subTitleLink": "أرسل لك ارتباط:",
-    "canceled": "أُلغِيَ المرسل الطلب."
+    "canceled": "ألغى المرسل الطلب."
   },
   "receiveOptionsPage": {
     "title": "خيارات",
     "destination": "@:settingsTab.receive.destination",
-    "appDirectory": "(مجلد LocalSend)",
+    "appDirectory": "(LocalSend folder)",
     "saveToGallery": "@:settingsTab.receive.saveToGallery",
-    "saveToGalleryOff": "تم إيقافه تلقائيًا لوجود مجلدات."
+    "saveToGalleryOff": "تم إيقافه تلقائيًا لوجود دلائل."
   },
   "sendPage": {
     "waiting": "بإنتظار الرد…",
@@ -219,27 +219,19 @@
     "busy": "المستلم مشغول بطلب آخر."
   },
   "progressPage": {
-    "titleSending": "جارِ إرسال الملفات",
-    "titleReceiving": "جارِ استلام الملفات",
-    "savedToGallery": "حُفظ في الصور",
+    "titleSending": "يتم إرسال الملفات",
+    "titleReceiving": "يتم استلام الملفات",
+    "savedToGallery": "تم الحفظ في الصور",
     "total": {
       "title": {
         "sending": "التقدم الكلي ({time})",
         "finishedError": "انتهى مع وجود خطأ",
-        "canceledSender": "أُلغِيَ من قِبل المرسل",
-        "canceledReceiver": "أُلغِيَ من قِبل المتلقي"
+        "canceledSender": "ألغي من قبل المرسل",
+        "canceledReceiver": "ألغي من قبل المتلقي"
       },
       "count": "ملفات: {curr} / {n}",
       "size": "حجم: {curr} / {n}",
       "speed": "سرعة: {speed}/ثانية"
-    },
-    "remainingTime": {
-      "seconds": "{n}:{ss}",
-      "minutes": "{n}:{ss}",
-      "hours": "{h}س {m}د",
-      "days": "{d}ي {h}س {m}د",
-      "@hours": "استخدم 'س' لاختصار الساعات و'د' للدقائق",
-      "@days": "استخدم 'ي' للأيام، و'س' للساعات، و'د' للدقائق"
     }
   },
   "webSharePage": {
@@ -254,7 +246,7 @@
     "requests": "الطلبات",
     "noRequests": "لا يوجد طلبات حتى الآن.",
     "encryption": "@:settingsTab.network.encryption",
-    "autoAccept": "قبول الطلبات تلقائيًا",
+    "autoAccept": "قبول الطلبات تلقائيا",
     "requirePin": "يتطلب رمز PIN",
     "pinHint": "رمز PIN هو \"{pin}\"",
     "encryptionHint": "يستخدم تطبيق LocalSend شهادة موقع ذاتية التوقيع. يجب عليك قبولها في المتصفح.",
@@ -268,7 +260,7 @@
     ],
     "author": "المؤلف",
     "contributors": "المساهمون",
-    "packagers": "محزمي التطبيقات",
+    "packagers": "الحزم",
     "translators": "المترجمون"
   },
   "donationPage": {
@@ -279,10 +271,10 @@
     "restore": "استعادة شراء"
   },
   "changelogPage": {
-    "title": "سجل التغييرات"
+    "title": "التغييرات"
   },
   "aliasGenerator(ignoreMissing, ignoreGpt)": {
-    "@info": "قد تحتوي المناطق المختلفة على كلمات مختلفة، وقد لا تتطابق 1:1",
+    "@info": "قد تحتوي المناطق المختلفة على كلمات مختلفة ، وقد لا تتطابق 1:1",
     "adjectives": [
       "محبوب",
       "جميل",
@@ -361,45 +353,45 @@
     },
     "openFile": {
       "title": "افتح الملف",
-      "content": "هل تريد فتح الملف المُستلم؟"
+      "content": "هل تريد فتح الملف المستلم؟"
     },
     "addressInput": {
       "title": "أدخل العنوان",
       "hashtag": "رابطة هاشتاق",
       "ip": "عنوان IP",
-      "recentlyUsed": "المستخدمة حديثًا: "
+      "recentlyUsed": "تم استخدامها مؤخرًا: "
     },
     "cancelSession": {
-      "title": "ألغِ نقل الملف",
+      "title": "إلغاء نقل الملف",
       "content": "هل تريد حقًا إلغاء نقل الملف؟"
     },
     "cannotOpenFile": {
       "title": "لا يمكن فتح الملف",
-      "content": "تعذر فتح \"{file}\". هل نُقل هذا الملف أو إعادة تسميته أو حذفه؟"
+      "content": "تعذر فتح \"{file}\". هل تم نقل هذا الملف أو إعادة تسميته أو حذفه؟"
     },
     "encryptionDisabledNotice": {
-      "title": "التعمية مُعطّلة",
-      "content": "الاتصال يتم الآن عبر بروتوكول HTTP غير المُعمّى. لاستخدام HTTPS، فعِّل التعمية مرة أخرى."
+      "title": "تم تعطيل التشفير",
+      "content": "الاتصال يتم الآن عبر بروتوكول HTTP غير المشفر. لاستخدام HTTPS ، قم بتمكين التشفير مرة أخرى."
     },
     "errorDialog": {
       "title": "@:general.error"
     },
     "favoriteDialog": {
-      "title": "المفضلات",
+      "title": "المفضلة",
       "noFavorites": "لا توجد أجهزة مفضلة بعد.",
-      "addFavorite": "أضف"
+      "addFavorite": "إضافة"
     },
     "favoriteDeleteDialog": {
-      "title": "احذف من المفضلات",
-      "content": "هل ترغب حقًا في حذف \"{name}\" من المفضلات؟"
+      "title": "حذف من المفضلة",
+      "content": "هل ترغب حقًا في حذف \"{name}\" من قائمة المفضلة؟"
     },
     "favoriteEditDialog": {
-      "titleAdd": "أضف إلى المفضلات",
-      "titleEdit": "اﻹعدادات",
-      "name": "اسم الجهاز",
+      "titleAdd": "إضافة إلى المفضلة",
+      "titleEdit": "تعديل",
+      "name": "الاسم",
       "auto": "(تلقائي)",
       "ip": "عنوان IP",
-      "port": "المنفذ"
+      "port": "Port"
     },
     "fileInfo": {
       "title": "معلومات الملف",
@@ -414,12 +406,12 @@
       "original": "أصلي: {original}"
     },
     "historyClearDialog": {
-      "title": "امسح التاريخ",
-      "content": "هل ترغب حقًا في مسح التاريخ بالكامل؟"
+      "title": "محو السجل",
+      "content": "هل ترغب حقًا في محو السجل بالكامل؟"
     },
     "localNetworkUnauthorized": {
       "title": "@:dialogs.noPermission.title",
-      "description": "لا يمكن ل LocalSend العثور على الأجهزة الأخرى بدون الإذن بفحص الشبكة المحلية. يُرجى منح هذا الإذن في الإعدادات.",
+      "description": "لا يمكن ل LocalSend العثور على الأجهزة الأخرى بدون الإذن بفحص الشبكة المحلية. يرجى منح هذا الإذن في الإعدادات.",
       "gotoSettings": "الإعدادات"
     },
     "messageInput": {
@@ -432,21 +424,21 @@
     },
     "noPermission": {
       "title": "بدون إذن",
-      "content": "لم تمنح الأذونات اللازمة. يُرجى منحها في الإعدادات."
+      "content": "لم تقم بمنح الأذونات اللازمة. يرجى منحها من الإعدادات."
     },
     "notAvailableOnPlatform": {
       "title": "غير متاح",
       "content": "هذه الميزة متاحة فقط على:"
     },
     "qr": {
-      "title": "رمز QR"
+      "title": "رمز الاستجابة السريعة"
     },
     "quickActions": {
       "title": "إجراءات سريعة",
       "counter": "عداد",
       "prefix": "بادئة",
-      "padZero": "احشو مع أصفار",
-      "sortBeforeCount": "افرز أبجديًا مسبقًا (أ-ي)",
+      "padZero": "بدأ مع أصفار",
+      "sortBeforeCount": "قم بالفرز أبجديًا مسبقًا",
       "random": "عشوائي"
     },
     "quickSaveNotice": {
@@ -456,8 +448,8 @@
     "quickSaveFromFavoritesNotice": {
       "title": "@:general.quickSaveFromFavorites",
       "content": [
-        "يتم الآن قبول طلبات الملفات تلقائيًا من الأجهزة الموجودة في قائمة المفضلات لديك.",
-        "تحذير! في الوقت الحالي، هذا ليس آمنًا تمامًا، حيث يمكن للمخترق الذي لديه بصمة أي جهاز من قائمة المفضلات لديك أن يرسل لك ملفات دون قيود.",
+        "يتم الآن قبول طلبات الملفات تلقائيًا من الأجهزة الموجودة في قائمة المفضلة لديك.",
+        "تحذير! في الوقت الحالي، هذا ليس آمنًا تمامًا، حيث يمكن للمخترق الذي لديه بصمة أي جهاز من قائمة المفضلة لديك أن يرسل لك ملفات دون قيود.",
         "ومع ذلك، يظل هذا الخيار أكثر أمانًا من السماح لجميع المستخدمين على الشبكة المحلية بإرسال الملفات إليك دون قيود."
       ]
     },
@@ -466,12 +458,12 @@
     },
     "sendModeHelp": {
       "title": "أوضاع الإرسال",
-      "single": "يقوم بإرسال الملفات إلى مستلم واحد. سيتم مسح الاختيار بعد انتهاء نقل الملف.",
-      "multiple": "يرسل الملفات إلى عدة مستلمين. لن يتم مسح التحديد بعد الانتهاء من نقل الملفات.",
+      "single": "يقوم بإرسال الملفات إلى مستلم واحد. ستتم مسح الاختيار بعد انتهاء نقل الملف.",
+      "multiple": "يقوم بإرسال الملفات إلى مستلمين متعددين. لن يتم مسح الاختيار.",
       "link": "يمكن للمستلمين الذين لا يحتوون على LocalSend تنزيل الملفات المحددة عن طريق فتح الرابط في متصفحهم."
     },
     "zoom": {
-      "title": "عنوان URL"
+      "title": "URL"
     }
   },
   "sanitization": {
@@ -481,46 +473,46 @@
   "tray": {
     "@info": "إرشادات Apple صارمة للغاية بشأن صياغة 'الإغلاق'.",
     "open": "@:general.open",
-    "close": "أنهِ LocalSend",
-    "closeWindows": "اخرج"
+    "close": "أغلق LocalSend",
+    "closeWindows": "خروج"
   },
   "web": {
     "waiting": "@:sendPage.waiting",
     "enterPin": "أدخل رمز PIN",
     "invalidPin": "رمز PIN غير صالح",
     "tooManyAttempts": "محاولات كثيرة جدًا",
-    "rejected": "رُفض",
+    "rejected": "مرفوضة",
     "files": "الملفات",
     "fileName": "اسم الملف",
     "size": "الحجم"
   },
   "assetPicker": {
-    "@info": "ترجمات أداة تحديد الوسائط لنظامي التشغيل أندرويد و آيفون",
-    "confirm": "أكّد",
-    "cancel": "ألغِ",
-    "edit": "عدّل",
+    "@info": "Translations for the Media selection tool for Android and Iphone",
+    "confirm": "تاكيد",
+    "cancel": "إلغاء",
+    "edit": "تعديل",
     "gifIndicator": "GIF",
     "loadFailed": "فشل التحميل",
     "original": "أصلي",
     "preview": "معاينة",
-    "select": "حدّد",
+    "select": "تحديد",
     "emptyList": "القائمة فارغة",
-    "unSupportedAssetType": "نوع الملف غير مدعوم.",
+    "unSupportedAssetType": "نوع ملف غير مدعوم.",
     "unableToAccessAll": "لا يمكن الوصول إلى جميع الملفات الموجودة على الجهاز",
     "viewingLimitedAssetsTip": "إظهار الملفات والألبومات التي يمكن للتطبيق الوصول إليها فقط.",
-    "changeAccessibleLimitedAssets": "انقر لتحديث الملفات التي يمكن الوصول إليها",
-    "accessAllTip": "يمكن للتطبيق الوصول فقط إلى بعض الملفات على الجهاز. اذهب إلى إعدادات النظام واسمح للتطبيق بالوصول إلى جميع الوسائط على الجهاز.",
-    "goToSystemSettings": "اذهب إلى إعدادات النظام",
-    "accessLimitedAssets": "استمر بوصول محدود",
+    "changeAccessibleLimitedAssets": "السماح بالوصول إلى ملفات إضافية",
+    "accessAllTip": "يمكن للتطبيق الوصول فقط إلى بعض الملفات على الجهاز. انتقل إلى إعدادات النظام واسمح للتطبيق بالوصول إلى جميع الوسائط على الجهاز.",
+    "goToSystemSettings": "فتح إعدادات النظام",
+    "accessLimitedAssets": "الاستمرار مع صلاحيات محدوده",
     "accessiblePathName": "ملفات يمكن الوصول إليها",
     "sTypeAudioLabel": "صوتي",
     "sTypeImageLabel": "صورة",
     "sTypeVideoLabel": "فيديو",
-    "sTypeOtherLabel": "وسائط أخرى",
-    "sActionPlayHint": "شغِّل",
+    "sTypeOtherLabel": "آخر",
+    "sActionPlayHint": "شغّل",
     "sActionPreviewHint": "معاينة",
-    "sActionSelectHint": "حدّد",
-    "sActionSwitchPathLabel": "غيّر المسار",
+    "sActionSelectHint": "تحديد",
+    "sActionSwitchPathLabel": "تبديل المسار",
     "sActionUseCameraHint": "استخدم الكاميرا",
     "sNameDurationLabel": "مدة",
     "sUnitAssetCountLabel": "عدد"

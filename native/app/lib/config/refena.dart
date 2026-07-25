@@ -9,8 +9,7 @@ final _logger = Logger('Refena');
 
 class CustomRefenaObserver extends RefenaMultiObserver {
   CustomRefenaObserver()
-    : super(
-        observers: [
+      : super(observers: [
           RefenaDebugObserver(
             onLine: (line) => _logger.info(line),
             exclude: _exclude,
@@ -20,8 +19,7 @@ class CustomRefenaObserver extends RefenaMultiObserver {
             exclude: _exclude,
           ),
           RefenaInspectorObserver(),
-        ],
-      );
+        ]);
 }
 
 bool _exclude(RefenaEvent event) {

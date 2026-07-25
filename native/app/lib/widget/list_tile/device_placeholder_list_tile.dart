@@ -1,10 +1,10 @@
+import 'package:common/model/device.dart';
 import 'package:flutter/material.dart';
 import 'package:localsend_app/provider/animation_provider.dart';
 import 'package:localsend_app/util/device_type_ext.dart';
 import 'package:localsend_app/widget/device_bage.dart';
 import 'package:localsend_app/widget/list_tile/custom_list_tile.dart';
 import 'package:localsend_app/widget/opacity_slideshow.dart';
-import 'package:localsend_isolates/model/device.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 
 class DevicePlaceholderListTile extends StatelessWidget {
@@ -34,12 +34,12 @@ class DevicePlaceholderListTile extends StatelessWidget {
         spacing: 10,
         children: [
           DeviceBadge(
-            backgroundColor: Theme.of(context).colorScheme.onSecondaryContainer.withValues(alpha: 0.5),
+            backgroundColor: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.5),
             foregroundColor: Colors.transparent,
             label: '       ',
           ),
           DeviceBadge(
-            backgroundColor: Theme.of(context).colorScheme.onSecondaryContainer.withValues(alpha: 0.5),
+            backgroundColor: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.5),
             foregroundColor: Colors.transparent,
             label: '              ',
           ),

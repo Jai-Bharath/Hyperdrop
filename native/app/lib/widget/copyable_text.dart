@@ -27,7 +27,7 @@ class CopyableText extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           children: [
-            ?prefix,
+            if (prefix != null) prefix!,
             TextSpan(text: value ?? '-'),
           ],
         ),

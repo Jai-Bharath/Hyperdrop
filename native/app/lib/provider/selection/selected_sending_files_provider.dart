@@ -1,7 +1,8 @@
-import 'dart:convert' show jsonDecode, utf8;
+import 'dart:convert' show utf8;
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:common/model/file_type.dart';
 import 'package:localsend_app/model/cross_file.dart';
 import 'package:localsend_app/util/file_path_helper.dart';
 import 'package:localsend_app/util/native/cache_helper.dart';
@@ -9,11 +10,9 @@ import 'package:localsend_app/util/native/channel/android_channel.dart' as andro
 import 'package:localsend_app/util/native/content_uri_helper.dart';
 import 'package:localsend_app/util/native/cross_file_converters.dart';
 import 'package:localsend_app/util/send_ignore.dart';
-import 'package:localsend_isolates/model/file_type.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:refena_flutter/refena_flutter.dart';
-import 'package:share_handler/share_handler.dart';
 import 'package:uuid/uuid.dart';
 
 final _logger = Logger('SelectedSendingFiles');
@@ -55,11 +54,9 @@ class AddMessageAction extends ReduxAction<SelectedSendingFilesNotifier, List<Cr
       lastAccessed: null,
     );
 
-    return List.unmodifiable(
-      [
-        ...state,
-      ]..insert(index ?? state.length, file),
-    );
+    return List.unmodifiable([
+      ...state,
+    ]..insert(index ?? state.length, file));
   }
 }
 
@@ -290,42 +287,7 @@ class LoadSelectionFromArgsAction extends AsyncReduxActionWithResult<SelectedSen
   @override
   Future<(List<CrossFile>, bool)> reduce() async {
     bool filesAdded = false;
-    bool nextShare = false;
-    bool nextText = false;
     for (final arg in args) {
-      if (arg == '--share') {
-        nextShare = true;
-        continue;
-      }
-      if (arg == '--text' || arg == '-t') {
-        nextText = true;
-        continue;
-      }
-      if (nextShare) {
-        nextShare = false;
-        final json = jsonDecode(arg);
-        final SharedMedia payload = SharedMedia.decode(json);
-        final message = payload.content;
-        if (message != null && message.trim().isNotEmpty) {
-          dispatch(AddMessageAction(message: message));
-        }
-        await dispatchAsync(
-          AddFilesAction(
-            files: payload.attachments?.where((a) => a != null).cast<SharedAttachment>() ?? <SharedAttachment>[],
-            converter: CrossFileConverters.convertSharedAttachment,
-          ),
-        );
-        filesAdded = true;
-        continue;
-      }
-      if (nextText) {
-        nextText = false;
-        if (arg.trim().isNotEmpty) {
-          dispatch(AddMessageAction(message: arg.trim()));
-          filesAdded = true;
-        }
-        continue;
-      }
       if (arg.startsWith('-')) {
         continue;
       }
@@ -334,12 +296,10 @@ class LoadSelectionFromArgsAction extends AsyncReduxActionWithResult<SelectedSen
       final directory = Directory(arg);
 
       if (file.existsSync()) {
-        await dispatchAsync(
-          AddFilesAction(
-            files: [file],
-            converter: CrossFileConverters.convertFile,
-          ),
-        );
+        await dispatchAsync(AddFilesAction(
+          files: [file],
+          converter: CrossFileConverters.convertFile,
+        ));
         filesAdded = true;
       } else if (directory.existsSync()) {
         await dispatchAsync(AddDirectoryAction(arg));

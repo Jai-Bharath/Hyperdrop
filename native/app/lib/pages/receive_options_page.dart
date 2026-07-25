@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:localsend_app/gen/strings.g.dart';
-import 'package:localsend_app/pages/receive_page.dart';
 import 'package:localsend_app/provider/network/server/server_provider.dart';
 import 'package:localsend_app/provider/selection/selected_receiving_files_provider.dart';
 import 'package:localsend_app/util/file_size_helper.dart';
@@ -15,9 +14,7 @@ import 'package:localsend_app/widget/responsive_list_view.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 
 class ReceiveOptionsPage extends StatelessWidget {
-  final ReceivePageVm vm;
-
-  const ReceiveOptionsPage(this.vm);
+  const ReceiveOptionsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +86,7 @@ class ReceiveOptionsPage extends StatelessWidget {
                       Expanded(
                         child: Text(t.receiveOptionsPage.saveToGalleryOff, style: const TextStyle(color: Colors.grey)),
                       ),
-                    ],
+                    ]
                   ],
                 ),
               ],
@@ -112,40 +109,43 @@ class ReceiveOptionsPage extends StatelessWidget {
               Tooltip(
                 message: t.general.reset,
                 child: CustomIconButton(
-                  onPressed: () => ref.notifier(selectedReceivingFilesProvider).setFiles(vm.files),
+                  onPressed: () async {
+                    ref.notifier(selectedReceivingFilesProvider).setFiles(receiveSession.files.values.map((f) => f.file).toList());
+                  },
                   child: const Icon(Icons.undo),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 5),
-          ...vm.files.map((file) {
+          ...receiveSession.files.values.map((file) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(file.fileType.icon, size: 46),
+                  Icon(file.file.fileType.icon, size: 46),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          selectState[file.id] ?? file.fileName,
+                          selectState[file.file.id] ?? file.file.fileName,
                           style: const TextStyle(fontSize: 16),
                           maxLines: 1,
                           overflow: TextOverflow.fade,
                           softWrap: false,
                         ),
                         Text(
-                          '${!selectState.containsKey(file.id) ? t.general.skipped : (selectState[file.id] == file.fileName ? t.general.unchanged : t.general.renamed)} - ${file.size.asReadableFileSize}',
+                          '${!selectState.containsKey(file.file.id) ? t.general.skipped : (selectState[file.file.id] == file.file.fileName ? t.general.unchanged : t.general.renamed)} - ${file.file.size.asReadableFileSize}',
                           style: TextStyle(
-                            color: !selectState.containsKey(file.id)
-                                ? Colors.grey
-                                : (selectState[file.id] == file.fileName ? Theme.of(context).colorScheme.onSecondaryContainer : Colors.orange),
-                          ),
-                        ),
+                              color: !selectState.containsKey(file.file.id)
+                                  ? Colors.grey
+                                  : (selectState[file.file.id] == file.file.fileName
+                                      ? Theme.of(context).colorScheme.onSecondaryContainer
+                                      : Colors.orange)),
+                        )
                       ],
                     ),
                   ),
@@ -153,31 +153,31 @@ class ReceiveOptionsPage extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CustomIconButton(
-                        onPressed: selectState[file.id] == null
+                        onPressed: selectState[file.file.id] == null
                             ? null
                             : () async {
                                 final result = await showDialog<String>(
                                   context: context,
                                   builder: (_) => FileNameInputDialog(
-                                    originalName: file.fileName,
-                                    initialName: selectState[file.id]!,
+                                    originalName: file.file.fileName,
+                                    initialName: selectState[file.file.id]!,
                                   ),
                                 );
                                 if (result != null) {
-                                  ref.notifier(selectedReceivingFilesProvider).rename(file.id, result);
+                                  ref.notifier(selectedReceivingFilesProvider).rename(file.file.id, result);
                                 }
                               },
                         child: const Icon(Icons.edit),
                       ),
                       Checkbox(
-                        value: selectState.containsKey(file.id),
+                        value: selectState.containsKey(file.file.id),
                         activeColor: Theme.of(context).colorScheme.onSurface,
                         checkColor: Theme.of(context).colorScheme.surface,
                         onChanged: (selected) {
                           if (selected == true) {
-                            ref.notifier(selectedReceivingFilesProvider).select(file);
+                            ref.notifier(selectedReceivingFilesProvider).select(file.file);
                           } else {
-                            ref.notifier(selectedReceivingFilesProvider).unselect(file.id);
+                            ref.notifier(selectedReceivingFilesProvider).unselect(file.file.id);
                           }
                         },
                       ),

@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  bitsdojo_window_linux
   desktop_drop
   dynamic_color
   file_selector_linux
@@ -19,8 +18,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  jni
-  rust_lib_localsend_app
+  rhttp
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

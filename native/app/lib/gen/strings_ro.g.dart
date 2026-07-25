@@ -10,24 +10,18 @@ import 'package:slang/generated.dart';
 import 'strings.g.dart';
 
 // Path: <root>
-class TranslationsRo extends Translations with BaseTranslations<AppLocale, Translations> {
+class TranslationsRo extends Translations {
   /// You can call this constructor and build your own translation instance of this locale.
   /// Constructing via the enum [AppLocale.build] is preferred.
-  TranslationsRo({
-    Map<String, Node>? overrides,
-    PluralResolver? cardinalResolver,
-    PluralResolver? ordinalResolver,
-    TranslationMetadata<AppLocale, Translations>? meta,
-  }) : assert(overrides == null, 'Set "translation_overrides: true" in order to enable this feature.'),
-       $meta =
-           meta ??
-           TranslationMetadata(
-             locale: AppLocale.ro,
-             overrides: overrides ?? {},
-             cardinalResolver: cardinalResolver,
-             ordinalResolver: ordinalResolver,
-           ),
-       super(cardinalResolver: cardinalResolver, ordinalResolver: ordinalResolver);
+  TranslationsRo({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver})
+      : assert(overrides == null, 'Set "translation_overrides: true" in order to enable this feature.'),
+        $meta = TranslationMetadata(
+          locale: AppLocale.ro,
+          overrides: overrides ?? {},
+          cardinalResolver: cardinalResolver,
+          ordinalResolver: ordinalResolver,
+        ),
+        super(cardinalResolver: cardinalResolver, ordinalResolver: ordinalResolver);
 
   /// Metadata for the translations of <ro>.
   @override
@@ -35,65 +29,64 @@ class TranslationsRo extends Translations with BaseTranslations<AppLocale, Trans
 
   late final TranslationsRo _root = this; // ignore: unused_field
 
-  @override
-  TranslationsRo $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => TranslationsRo(meta: meta ?? this.$meta);
-
   // Translations
   @override
   String get locale => 'Română';
   @override
   String get appName => 'LocalSend';
   @override
-  late final _Translations$general$ro general = _Translations$general$ro._(_root);
+  late final _TranslationsGeneralRo general = _TranslationsGeneralRo._(_root);
   @override
-  late final _Translations$receiveTab$ro receiveTab = _Translations$receiveTab$ro._(_root);
+  late final _TranslationsReceiveTabRo receiveTab = _TranslationsReceiveTabRo._(_root);
   @override
-  late final _Translations$sendTab$ro sendTab = _Translations$sendTab$ro._(_root);
+  late final _TranslationsSendTabRo sendTab = _TranslationsSendTabRo._(_root);
   @override
-  late final _Translations$settingsTab$ro settingsTab = _Translations$settingsTab$ro._(_root);
+  late final _TranslationsSettingsTabRo settingsTab = _TranslationsSettingsTabRo._(_root);
   @override
-  late final _Translations$troubleshootPage$ro troubleshootPage = _Translations$troubleshootPage$ro._(_root);
+  late final _TranslationsTroubleshootPageRo troubleshootPage = _TranslationsTroubleshootPageRo._(_root);
   @override
-  late final _Translations$receiveHistoryPage$ro receiveHistoryPage = _Translations$receiveHistoryPage$ro._(_root);
+  late final _TranslationsReceiveHistoryPageRo receiveHistoryPage = _TranslationsReceiveHistoryPageRo._(_root);
   @override
-  late final _Translations$apkPickerPage$ro apkPickerPage = _Translations$apkPickerPage$ro._(_root);
+  late final _TranslationsApkPickerPageRo apkPickerPage = _TranslationsApkPickerPageRo._(_root);
   @override
-  late final _Translations$selectedFilesPage$ro selectedFilesPage = _Translations$selectedFilesPage$ro._(_root);
+  late final _TranslationsSelectedFilesPageRo selectedFilesPage = _TranslationsSelectedFilesPageRo._(_root);
   @override
-  late final _Translations$receivePage$ro receivePage = _Translations$receivePage$ro._(_root);
+  late final _TranslationsReceivePageRo receivePage = _TranslationsReceivePageRo._(_root);
   @override
-  late final _Translations$receiveOptionsPage$ro receiveOptionsPage = _Translations$receiveOptionsPage$ro._(_root);
+  late final _TranslationsReceiveOptionsPageRo receiveOptionsPage = _TranslationsReceiveOptionsPageRo._(_root);
   @override
-  late final _Translations$sendPage$ro sendPage = _Translations$sendPage$ro._(_root);
+  late final _TranslationsSendPageRo sendPage = _TranslationsSendPageRo._(_root);
   @override
-  late final _Translations$progressPage$ro progressPage = _Translations$progressPage$ro._(_root);
+  late final _TranslationsProgressPageRo progressPage = _TranslationsProgressPageRo._(_root);
   @override
-  late final _Translations$webSharePage$ro webSharePage = _Translations$webSharePage$ro._(_root);
+  late final _TranslationsWebSharePageRo webSharePage = _TranslationsWebSharePageRo._(_root);
   @override
-  late final _Translations$aboutPage$ro aboutPage = _Translations$aboutPage$ro._(_root);
+  late final _TranslationsAboutPageRo aboutPage = _TranslationsAboutPageRo._(_root);
   @override
-  late final _Translations$donationPage$ro donationPage = _Translations$donationPage$ro._(_root);
+  late final _TranslationsDonationPageRo donationPage = _TranslationsDonationPageRo._(_root);
   @override
-  late final _Translations$changelogPage$ro changelogPage = _Translations$changelogPage$ro._(_root);
+  late final _TranslationsChangelogPageRo changelogPage = _TranslationsChangelogPageRo._(_root);
   @override
-  late final _Translations$aliasGenerator$ro aliasGenerator = _Translations$aliasGenerator$ro._(_root);
+  late final _TranslationsAliasGeneratorRo aliasGenerator = _TranslationsAliasGeneratorRo._(_root);
   @override
-  late final _Translations$dialogs$ro dialogs = _Translations$dialogs$ro._(_root);
+  late final _TranslationsDialogsRo dialogs = _TranslationsDialogsRo._(_root);
   @override
-  late final _Translations$sanitization$ro sanitization = _Translations$sanitization$ro._(_root);
+  late final _TranslationsSanitizationRo sanitization = _TranslationsSanitizationRo._(_root);
   @override
-  late final _Translations$tray$ro tray = _Translations$tray$ro._(_root);
+  late final _TranslationsTrayRo tray = _TranslationsTrayRo._(_root);
   @override
-  late final _Translations$web$ro web = _Translations$web$ro._(_root);
+  late final _TranslationsWebRo web = _TranslationsWebRo._(_root);
   @override
-  late final _Translations$assetPicker$ro assetPicker = _Translations$assetPicker$ro._(_root);
+  late final _TranslationsAssetPickerRo assetPicker = _TranslationsAssetPickerRo._(_root);
   @override
-  late final _Translations$networkInterfacesPage$ro networkInterfacesPage = _Translations$networkInterfacesPage$ro._(_root);
+  late final _TranslationsNetworkInterfacesPageRo networkInterfacesPage = _TranslationsNetworkInterfacesPageRo._(_root);
 }
 
 // Path: general
-class _Translations$general$ro extends Translations$general$en {
-  _Translations$general$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsGeneralRo extends TranslationsGeneralEn {
+  _TranslationsGeneralRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -177,8 +170,10 @@ class _Translations$general$ro extends Translations$general$en {
 }
 
 // Path: receiveTab
-class _Translations$receiveTab$ro extends Translations$receiveTab$en {
-  _Translations$receiveTab$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsReceiveTabRo extends TranslationsReceiveTabEn {
+  _TranslationsReceiveTabRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -186,14 +181,16 @@ class _Translations$receiveTab$ro extends Translations$receiveTab$en {
   @override
   String get title => 'Primire';
   @override
-  late final _Translations$receiveTab$infoBox$ro infoBox = _Translations$receiveTab$infoBox$ro._(_root);
+  late final _TranslationsReceiveTabInfoBoxRo infoBox = _TranslationsReceiveTabInfoBoxRo._(_root);
   @override
-  late final _Translations$receiveTab$quickSave$ro quickSave = _Translations$receiveTab$quickSave$ro._(_root);
+  late final _TranslationsReceiveTabQuickSaveRo quickSave = _TranslationsReceiveTabQuickSaveRo._(_root);
 }
 
 // Path: sendTab
-class _Translations$sendTab$ro extends Translations$sendTab$en {
-  _Translations$sendTab$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSendTabRo extends TranslationsSendTabEn {
+  _TranslationsSendTabRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -201,9 +198,9 @@ class _Translations$sendTab$ro extends Translations$sendTab$en {
   @override
   String get title => 'Trimite';
   @override
-  late final _Translations$sendTab$selection$ro selection = _Translations$sendTab$selection$ro._(_root);
+  late final _TranslationsSendTabSelectionRo selection = _TranslationsSendTabSelectionRo._(_root);
   @override
-  late final _Translations$sendTab$picker$ro picker = _Translations$sendTab$picker$ro._(_root);
+  late final _TranslationsSendTabPickerRo picker = _TranslationsSendTabPickerRo._(_root);
   @override
   String get shareIntentInfo => 'Poți utiliza, de asemenea, funcția „Partajare” a dispozitivului pentru a selecta mai ușor fișierele.';
   @override
@@ -217,7 +214,7 @@ class _Translations$sendTab$ro extends Translations$sendTab$en {
   @override
   String get sendMode => 'Mod de trimitere';
   @override
-  late final _Translations$sendTab$sendModes$ro sendModes = _Translations$sendTab$sendModes$ro._(_root);
+  late final _TranslationsSendTabSendModesRo sendModes = _TranslationsSendTabSendModesRo._(_root);
   @override
   String get sendModeHelp => 'Explicație';
   @override
@@ -227,8 +224,10 @@ class _Translations$sendTab$ro extends Translations$sendTab$en {
 }
 
 // Path: settingsTab
-class _Translations$settingsTab$ro extends Translations$settingsTab$en {
-  _Translations$settingsTab$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabRo extends TranslationsSettingsTabEn {
+  _TranslationsSettingsTabRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -236,22 +235,24 @@ class _Translations$settingsTab$ro extends Translations$settingsTab$en {
   @override
   String get title => 'Setări';
   @override
-  late final _Translations$settingsTab$general$ro general = _Translations$settingsTab$general$ro._(_root);
+  late final _TranslationsSettingsTabGeneralRo general = _TranslationsSettingsTabGeneralRo._(_root);
   @override
-  late final _Translations$settingsTab$receive$ro receive = _Translations$settingsTab$receive$ro._(_root);
+  late final _TranslationsSettingsTabReceiveRo receive = _TranslationsSettingsTabReceiveRo._(_root);
   @override
-  late final _Translations$settingsTab$send$ro send = _Translations$settingsTab$send$ro._(_root);
+  late final _TranslationsSettingsTabSendRo send = _TranslationsSettingsTabSendRo._(_root);
   @override
-  late final _Translations$settingsTab$network$ro network = _Translations$settingsTab$network$ro._(_root);
+  late final _TranslationsSettingsTabNetworkRo network = _TranslationsSettingsTabNetworkRo._(_root);
   @override
-  late final _Translations$settingsTab$other$ro other = _Translations$settingsTab$other$ro._(_root);
+  late final _TranslationsSettingsTabOtherRo other = _TranslationsSettingsTabOtherRo._(_root);
   @override
   String get advancedSettings => 'Setări avansate';
 }
 
 // Path: troubleshootPage
-class _Translations$troubleshootPage$ro extends Translations$troubleshootPage$en {
-  _Translations$troubleshootPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsTroubleshootPageRo extends TranslationsTroubleshootPageEn {
+  _TranslationsTroubleshootPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -265,16 +266,18 @@ class _Translations$troubleshootPage$ro extends Translations$troubleshootPage$en
   @override
   String get fixButton => 'Repară automat';
   @override
-  late final _Translations$troubleshootPage$firewall$ro firewall = _Translations$troubleshootPage$firewall$ro._(_root);
+  late final _TranslationsTroubleshootPageFirewallRo firewall = _TranslationsTroubleshootPageFirewallRo._(_root);
   @override
-  late final _Translations$troubleshootPage$noDiscovery$ro noDiscovery = _Translations$troubleshootPage$noDiscovery$ro._(_root);
+  late final _TranslationsTroubleshootPageNoDiscoveryRo noDiscovery = _TranslationsTroubleshootPageNoDiscoveryRo._(_root);
   @override
-  late final _Translations$troubleshootPage$noConnection$ro noConnection = _Translations$troubleshootPage$noConnection$ro._(_root);
+  late final _TranslationsTroubleshootPageNoConnectionRo noConnection = _TranslationsTroubleshootPageNoConnectionRo._(_root);
 }
 
 // Path: receiveHistoryPage
-class _Translations$receiveHistoryPage$ro extends Translations$receiveHistoryPage$en {
-  _Translations$receiveHistoryPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsReceiveHistoryPageRo extends TranslationsReceiveHistoryPageEn {
+  _TranslationsReceiveHistoryPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -288,12 +291,14 @@ class _Translations$receiveHistoryPage$ro extends Translations$receiveHistoryPag
   @override
   String get empty => 'Istoricul este gol.';
   @override
-  late final _Translations$receiveHistoryPage$entryActions$ro entryActions = _Translations$receiveHistoryPage$entryActions$ro._(_root);
+  late final _TranslationsReceiveHistoryPageEntryActionsRo entryActions = _TranslationsReceiveHistoryPageEntryActionsRo._(_root);
 }
 
 // Path: apkPickerPage
-class _Translations$apkPickerPage$ro extends Translations$apkPickerPage$en {
-  _Translations$apkPickerPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsApkPickerPageRo extends TranslationsApkPickerPageEn {
+  _TranslationsApkPickerPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -309,8 +314,10 @@ class _Translations$apkPickerPage$ro extends Translations$apkPickerPage$en {
 }
 
 // Path: selectedFilesPage
-class _Translations$selectedFilesPage$ro extends Translations$selectedFilesPage$en {
-  _Translations$selectedFilesPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSelectedFilesPageRo extends TranslationsSelectedFilesPageEn {
+  _TranslationsSelectedFilesPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -320,18 +327,20 @@ class _Translations$selectedFilesPage$ro extends Translations$selectedFilesPage$
 }
 
 // Path: receivePage
-class _Translations$receivePage$ro extends Translations$receivePage$en {
-  _Translations$receivePage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsReceivePageRo extends TranslationsReceivePageEn {
+  _TranslationsReceivePageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
   // Translations
   @override
   String subTitle({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ro'))(
-    n,
-    one: 'vrea să îți trimită un fișier',
-    other: 'vrea să îți trimită ${n} fișiere',
-  );
+        n,
+        one: 'vrea să îți trimită un fișier',
+        other: 'vrea să îți trimită ${n} fișiere',
+      );
   @override
   String get subTitleMessage => 'ți-a trimis un mesaj:';
   @override
@@ -341,8 +350,10 @@ class _Translations$receivePage$ro extends Translations$receivePage$en {
 }
 
 // Path: receiveOptionsPage
-class _Translations$receiveOptionsPage$ro extends Translations$receiveOptionsPage$en {
-  _Translations$receiveOptionsPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsReceiveOptionsPageRo extends TranslationsReceiveOptionsPageEn {
+  _TranslationsReceiveOptionsPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -360,8 +371,10 @@ class _Translations$receiveOptionsPage$ro extends Translations$receiveOptionsPag
 }
 
 // Path: sendPage
-class _Translations$sendPage$ro extends Translations$sendPage$en {
-  _Translations$sendPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSendPageRo extends TranslationsSendPageEn {
+  _TranslationsSendPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -377,8 +390,10 @@ class _Translations$sendPage$ro extends Translations$sendPage$en {
 }
 
 // Path: progressPage
-class _Translations$progressPage$ro extends Translations$progressPage$en {
-  _Translations$progressPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsProgressPageRo extends TranslationsProgressPageEn {
+  _TranslationsProgressPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -390,12 +405,14 @@ class _Translations$progressPage$ro extends Translations$progressPage$en {
   @override
   String get savedToGallery => 'Salvat în Galerie';
   @override
-  late final _Translations$progressPage$total$ro total = _Translations$progressPage$total$ro._(_root);
+  late final _TranslationsProgressPageTotalRo total = _TranslationsProgressPageTotalRo._(_root);
 }
 
 // Path: webSharePage
-class _Translations$webSharePage$ro extends Translations$webSharePage$en {
-  _Translations$webSharePage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsWebSharePageRo extends TranslationsWebSharePageEn {
+  _TranslationsWebSharePageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -410,10 +427,10 @@ class _Translations$webSharePage$ro extends Translations$webSharePage$en {
   String get error => 'A apărut o eroare la pornirea serverului.';
   @override
   String openLink({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ro'))(
-    n,
-    one: 'Deschide acest link în browserul tău:',
-    other: 'Deschide unul dintre aceste linkuri în browserul tău:',
-  );
+        n,
+        one: 'Deschide acest link în browserul tău:',
+        other: 'Deschide unul dintre aceste linkuri în browserul tău:',
+      );
   @override
   String get requests => 'Cereri';
   @override
@@ -433,8 +450,10 @@ class _Translations$webSharePage$ro extends Translations$webSharePage$en {
 }
 
 // Path: aboutPage
-class _Translations$aboutPage$ro extends Translations$aboutPage$en {
-  _Translations$aboutPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsAboutPageRo extends TranslationsAboutPageEn {
+  _TranslationsAboutPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -443,9 +462,9 @@ class _Translations$aboutPage$ro extends Translations$aboutPage$en {
   String get title => 'Despre LocalSend';
   @override
   List<String> get description => [
-    'LocalSend este o aplicație gratuită și open-source care îți permite să partajezi în siguranță fișiere și mesaje cu dispozitivele din apropiere prin rețeaua ta locală, fără a avea nevoie de o conexiune la internet.',
-    'Această aplicație este disponibilă pe Android, iOS, macOS, Windows și Linux. Poți găsi toate opțiunile de descărcare pe pagina oficială.',
-  ];
+        'LocalSend este o aplicație gratuită și open-source care îți permite să partajezi în siguranță fișiere și mesaje cu dispozitivele din apropiere prin rețeaua ta locală, fără a avea nevoie de o conexiune la internet.',
+        'Această aplicație este disponibilă pe Android, iOS, macOS, Windows și Linux. Poți găsi toate opțiunile de descărcare pe pagina oficială.',
+      ];
   @override
   String get author => 'Autor';
   @override
@@ -457,8 +476,10 @@ class _Translations$aboutPage$ro extends Translations$aboutPage$en {
 }
 
 // Path: donationPage
-class _Translations$donationPage$ro extends Translations$donationPage$en {
-  _Translations$donationPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDonationPageRo extends TranslationsDonationPageEn {
+  _TranslationsDonationPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -476,8 +497,10 @@ class _Translations$donationPage$ro extends Translations$donationPage$en {
 }
 
 // Path: changelogPage
-class _Translations$changelogPage$ro extends Translations$changelogPage$en {
-  _Translations$changelogPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsChangelogPageRo extends TranslationsChangelogPageEn {
+  _TranslationsChangelogPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -487,80 +510,82 @@ class _Translations$changelogPage$ro extends Translations$changelogPage$en {
 }
 
 // Path: aliasGenerator
-class _Translations$aliasGenerator$ro extends Translations$aliasGenerator$en {
-  _Translations$aliasGenerator$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsAliasGeneratorRo extends TranslationsAliasGeneratorEn {
+  _TranslationsAliasGeneratorRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
   // Translations
   @override
   List<String> get adjectives => [
-    'Adorabilă',
-    'Frumoasă',
-    'Mare',
-    'Strălucitoare',
-    'Curată',
-    'Deșteaptă',
-    'Cool',
-    'Drăguță',
-    'Vicleană',
-    'Determinantă',
-    'Energică',
-    'Eficientă',
-    'Fantastică',
-    'Repede',
-    'Bine',
-    'Sănătoasă',
-    'Proaspătă',
-    'Bună',
-    'Superbă',
-    'Grozavă',
-    'Coaptă',
-    'Fierbinte',
-    'Amabilă',
-    'Iubitoare',
-    'Mistică',
-    'îngrijită',
-    'Plăcută',
-    'Răbdătoare',
-    'Frumușică',
-    'Puternică',
-    'Delicioasă',
-    'Secretă',
-    'Inteligentă',
-    'Solidă',
-    'Specială',
-    'Strategică',
-    'Aromată',
-    'Înțeleaptă',
-  ];
+        'Adorabilă',
+        'Frumoasă',
+        'Mare',
+        'Strălucitoare',
+        'Curată',
+        'Deșteaptă',
+        'Cool',
+        'Drăguță',
+        'Vicleană',
+        'Determinantă',
+        'Energică',
+        'Eficientă',
+        'Fantastică',
+        'Repede',
+        'Bine',
+        'Sănătoasă',
+        'Proaspătă',
+        'Bună',
+        'Superbă',
+        'Grozavă',
+        'Coaptă',
+        'Fierbinte',
+        'Amabilă',
+        'Iubitoare',
+        'Mistică',
+        'îngrijită',
+        'Plăcută',
+        'Răbdătoare',
+        'Frumușică',
+        'Puternică',
+        'Delicioasă',
+        'Secretă',
+        'Inteligentă',
+        'Solidă',
+        'Specială',
+        'Strategică',
+        'Aromată',
+        'Înțeleaptă',
+      ];
   @override
   List<String> get fruits => [
-    'Caisă',
-    'Gutuie',
-    'Banană',
-    'Mură',
-    'Nucă',
-    'Afină',
-    'Vișină',
-    'Cireașă',
-    'Lămâie',
-    'Salată',
-    'Fasole',
-    'Conopidă',
-    'Ciupercă',
-    'Ceapă',
-    'Portocală',
-    'Piersică',
-    'Pară',
-    'Varză',
-    'Mazăre',
-    'Prună',
-    'Rodie',
-    'Zmeură',
-    'Căpșună',
-    'Roșie',
-  ];
+        'Caisă',
+        'Gutuie',
+        'Banană',
+        'Mură',
+        'Nucă',
+        'Afină',
+        'Vișină',
+        'Cireașă',
+        'Lămâie',
+        'Salată',
+        'Fasole',
+        'Conopidă',
+        'Ciupercă',
+        'Ceapă',
+        'Portocală',
+        'Piersică',
+        'Pară',
+        'Varză',
+        'Mazăre',
+        'Prună',
+        'Rodie',
+        'Zmeură',
+        'Căpșună',
+        'Roșie',
+      ];
 
   /// In some languages, the adjective must be last.
   @override
@@ -568,68 +593,72 @@ class _Translations$aliasGenerator$ro extends Translations$aliasGenerator$en {
 }
 
 // Path: dialogs
-class _Translations$dialogs$ro extends Translations$dialogs$en {
-  _Translations$dialogs$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsRo extends TranslationsDialogsEn {
+  _TranslationsDialogsRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
   // Translations
   @override
-  late final _Translations$dialogs$addFile$ro addFile = _Translations$dialogs$addFile$ro._(_root);
+  late final _TranslationsDialogsAddFileRo addFile = _TranslationsDialogsAddFileRo._(_root);
   @override
-  late final _Translations$dialogs$openFile$ro openFile = _Translations$dialogs$openFile$ro._(_root);
+  late final _TranslationsDialogsOpenFileRo openFile = _TranslationsDialogsOpenFileRo._(_root);
   @override
-  late final _Translations$dialogs$addressInput$ro addressInput = _Translations$dialogs$addressInput$ro._(_root);
+  late final _TranslationsDialogsAddressInputRo addressInput = _TranslationsDialogsAddressInputRo._(_root);
   @override
-  late final _Translations$dialogs$cancelSession$ro cancelSession = _Translations$dialogs$cancelSession$ro._(_root);
+  late final _TranslationsDialogsCancelSessionRo cancelSession = _TranslationsDialogsCancelSessionRo._(_root);
   @override
-  late final _Translations$dialogs$cannotOpenFile$ro cannotOpenFile = _Translations$dialogs$cannotOpenFile$ro._(_root);
+  late final _TranslationsDialogsCannotOpenFileRo cannotOpenFile = _TranslationsDialogsCannotOpenFileRo._(_root);
   @override
-  late final _Translations$dialogs$encryptionDisabledNotice$ro encryptionDisabledNotice = _Translations$dialogs$encryptionDisabledNotice$ro._(_root);
+  late final _TranslationsDialogsEncryptionDisabledNoticeRo encryptionDisabledNotice = _TranslationsDialogsEncryptionDisabledNoticeRo._(_root);
   @override
-  late final _Translations$dialogs$errorDialog$ro errorDialog = _Translations$dialogs$errorDialog$ro._(_root);
+  late final _TranslationsDialogsErrorDialogRo errorDialog = _TranslationsDialogsErrorDialogRo._(_root);
   @override
-  late final _Translations$dialogs$favoriteDialog$ro favoriteDialog = _Translations$dialogs$favoriteDialog$ro._(_root);
+  late final _TranslationsDialogsFavoriteDialogRo favoriteDialog = _TranslationsDialogsFavoriteDialogRo._(_root);
   @override
-  late final _Translations$dialogs$favoriteDeleteDialog$ro favoriteDeleteDialog = _Translations$dialogs$favoriteDeleteDialog$ro._(_root);
+  late final _TranslationsDialogsFavoriteDeleteDialogRo favoriteDeleteDialog = _TranslationsDialogsFavoriteDeleteDialogRo._(_root);
   @override
-  late final _Translations$dialogs$favoriteEditDialog$ro favoriteEditDialog = _Translations$dialogs$favoriteEditDialog$ro._(_root);
+  late final _TranslationsDialogsFavoriteEditDialogRo favoriteEditDialog = _TranslationsDialogsFavoriteEditDialogRo._(_root);
   @override
-  late final _Translations$dialogs$fileInfo$ro fileInfo = _Translations$dialogs$fileInfo$ro._(_root);
+  late final _TranslationsDialogsFileInfoRo fileInfo = _TranslationsDialogsFileInfoRo._(_root);
   @override
-  late final _Translations$dialogs$fileNameInput$ro fileNameInput = _Translations$dialogs$fileNameInput$ro._(_root);
+  late final _TranslationsDialogsFileNameInputRo fileNameInput = _TranslationsDialogsFileNameInputRo._(_root);
   @override
-  late final _Translations$dialogs$historyClearDialog$ro historyClearDialog = _Translations$dialogs$historyClearDialog$ro._(_root);
+  late final _TranslationsDialogsHistoryClearDialogRo historyClearDialog = _TranslationsDialogsHistoryClearDialogRo._(_root);
   @override
-  late final _Translations$dialogs$localNetworkUnauthorized$ro localNetworkUnauthorized = _Translations$dialogs$localNetworkUnauthorized$ro._(_root);
+  late final _TranslationsDialogsLocalNetworkUnauthorizedRo localNetworkUnauthorized = _TranslationsDialogsLocalNetworkUnauthorizedRo._(_root);
   @override
-  late final _Translations$dialogs$messageInput$ro messageInput = _Translations$dialogs$messageInput$ro._(_root);
+  late final _TranslationsDialogsMessageInputRo messageInput = _TranslationsDialogsMessageInputRo._(_root);
   @override
-  late final _Translations$dialogs$noFiles$ro noFiles = _Translations$dialogs$noFiles$ro._(_root);
+  late final _TranslationsDialogsNoFilesRo noFiles = _TranslationsDialogsNoFilesRo._(_root);
   @override
-  late final _Translations$dialogs$noPermission$ro noPermission = _Translations$dialogs$noPermission$ro._(_root);
+  late final _TranslationsDialogsNoPermissionRo noPermission = _TranslationsDialogsNoPermissionRo._(_root);
   @override
-  late final _Translations$dialogs$notAvailableOnPlatform$ro notAvailableOnPlatform = _Translations$dialogs$notAvailableOnPlatform$ro._(_root);
+  late final _TranslationsDialogsNotAvailableOnPlatformRo notAvailableOnPlatform = _TranslationsDialogsNotAvailableOnPlatformRo._(_root);
   @override
-  late final _Translations$dialogs$qr$ro qr = _Translations$dialogs$qr$ro._(_root);
+  late final _TranslationsDialogsQrRo qr = _TranslationsDialogsQrRo._(_root);
   @override
-  late final _Translations$dialogs$quickActions$ro quickActions = _Translations$dialogs$quickActions$ro._(_root);
+  late final _TranslationsDialogsQuickActionsRo quickActions = _TranslationsDialogsQuickActionsRo._(_root);
   @override
-  late final _Translations$dialogs$quickSaveNotice$ro quickSaveNotice = _Translations$dialogs$quickSaveNotice$ro._(_root);
+  late final _TranslationsDialogsQuickSaveNoticeRo quickSaveNotice = _TranslationsDialogsQuickSaveNoticeRo._(_root);
   @override
-  late final _Translations$dialogs$quickSaveFromFavoritesNotice$ro quickSaveFromFavoritesNotice =
-      _Translations$dialogs$quickSaveFromFavoritesNotice$ro._(_root);
+  late final _TranslationsDialogsQuickSaveFromFavoritesNoticeRo quickSaveFromFavoritesNotice =
+      _TranslationsDialogsQuickSaveFromFavoritesNoticeRo._(_root);
   @override
-  late final _Translations$dialogs$pin$ro pin = _Translations$dialogs$pin$ro._(_root);
+  late final _TranslationsDialogsPinRo pin = _TranslationsDialogsPinRo._(_root);
   @override
-  late final _Translations$dialogs$sendModeHelp$ro sendModeHelp = _Translations$dialogs$sendModeHelp$ro._(_root);
+  late final _TranslationsDialogsSendModeHelpRo sendModeHelp = _TranslationsDialogsSendModeHelpRo._(_root);
   @override
-  late final _Translations$dialogs$zoom$ro zoom = _Translations$dialogs$zoom$ro._(_root);
+  late final _TranslationsDialogsZoomRo zoom = _TranslationsDialogsZoomRo._(_root);
 }
 
 // Path: sanitization
-class _Translations$sanitization$ro extends Translations$sanitization$en {
-  _Translations$sanitization$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSanitizationRo extends TranslationsSanitizationEn {
+  _TranslationsSanitizationRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -641,8 +670,10 @@ class _Translations$sanitization$ro extends Translations$sanitization$en {
 }
 
 // Path: tray
-class _Translations$tray$ro extends Translations$tray$en {
-  _Translations$tray$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsTrayRo extends TranslationsTrayEn {
+  _TranslationsTrayRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -656,8 +687,10 @@ class _Translations$tray$ro extends Translations$tray$en {
 }
 
 // Path: web
-class _Translations$web$ro extends Translations$web$en {
-  _Translations$web$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsWebRo extends TranslationsWebEn {
+  _TranslationsWebRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -681,8 +714,10 @@ class _Translations$web$ro extends Translations$web$en {
 }
 
 // Path: assetPicker
-class _Translations$assetPicker$ro extends Translations$assetPicker$en {
-  _Translations$assetPicker$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsAssetPickerRo extends TranslationsAssetPickerEn {
+  _TranslationsAssetPickerRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -747,8 +782,10 @@ class _Translations$assetPicker$ro extends Translations$assetPicker$en {
 }
 
 // Path: networkInterfacesPage
-class _Translations$networkInterfacesPage$ro extends Translations$networkInterfacesPage$en {
-  _Translations$networkInterfacesPage$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsNetworkInterfacesPageRo extends TranslationsNetworkInterfacesPageEn {
+  _TranslationsNetworkInterfacesPageRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -767,8 +804,10 @@ class _Translations$networkInterfacesPage$ro extends Translations$networkInterfa
 }
 
 // Path: receiveTab.infoBox
-class _Translations$receiveTab$infoBox$ro extends Translations$receiveTab$infoBox$en {
-  _Translations$receiveTab$infoBox$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsReceiveTabInfoBoxRo extends TranslationsReceiveTabInfoBoxEn {
+  _TranslationsReceiveTabInfoBoxRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -782,8 +821,10 @@ class _Translations$receiveTab$infoBox$ro extends Translations$receiveTab$infoBo
 }
 
 // Path: receiveTab.quickSave
-class _Translations$receiveTab$quickSave$ro extends Translations$receiveTab$quickSave$en {
-  _Translations$receiveTab$quickSave$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsReceiveTabQuickSaveRo extends TranslationsReceiveTabQuickSaveEn {
+  _TranslationsReceiveTabQuickSaveRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -797,8 +838,10 @@ class _Translations$receiveTab$quickSave$ro extends Translations$receiveTab$quic
 }
 
 // Path: sendTab.selection
-class _Translations$sendTab$selection$ro extends Translations$sendTab$selection$en {
-  _Translations$sendTab$selection$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSendTabSelectionRo extends TranslationsSendTabSelectionEn {
+  _TranslationsSendTabSelectionRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -812,8 +855,10 @@ class _Translations$sendTab$selection$ro extends Translations$sendTab$selection$
 }
 
 // Path: sendTab.picker
-class _Translations$sendTab$picker$ro extends Translations$sendTab$picker$en {
-  _Translations$sendTab$picker$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSendTabPickerRo extends TranslationsSendTabPickerEn {
+  _TranslationsSendTabPickerRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -833,8 +878,10 @@ class _Translations$sendTab$picker$ro extends Translations$sendTab$picker$en {
 }
 
 // Path: sendTab.sendModes
-class _Translations$sendTab$sendModes$ro extends Translations$sendTab$sendModes$en {
-  _Translations$sendTab$sendModes$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSendTabSendModesRo extends TranslationsSendTabSendModesEn {
+  _TranslationsSendTabSendModesRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -848,8 +895,10 @@ class _Translations$sendTab$sendModes$ro extends Translations$sendTab$sendModes$
 }
 
 // Path: settingsTab.general
-class _Translations$settingsTab$general$ro extends Translations$settingsTab$general$en {
-  _Translations$settingsTab$general$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabGeneralRo extends TranslationsSettingsTabGeneralEn {
+  _TranslationsSettingsTabGeneralRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -859,17 +908,15 @@ class _Translations$settingsTab$general$ro extends Translations$settingsTab$gene
   @override
   String get brightness => 'Tema';
   @override
-  late final _Translations$settingsTab$general$brightnessOptions$ro brightnessOptions = _Translations$settingsTab$general$brightnessOptions$ro._(
-    _root,
-  );
+  late final _TranslationsSettingsTabGeneralBrightnessOptionsRo brightnessOptions = _TranslationsSettingsTabGeneralBrightnessOptionsRo._(_root);
   @override
   String get color => 'Culoare';
   @override
-  late final _Translations$settingsTab$general$colorOptions$ro colorOptions = _Translations$settingsTab$general$colorOptions$ro._(_root);
+  late final _TranslationsSettingsTabGeneralColorOptionsRo colorOptions = _TranslationsSettingsTabGeneralColorOptionsRo._(_root);
   @override
   String get language => 'Limba';
   @override
-  late final _Translations$settingsTab$general$languageOptions$ro languageOptions = _Translations$settingsTab$general$languageOptions$ro._(_root);
+  late final _TranslationsSettingsTabGeneralLanguageOptionsRo languageOptions = _TranslationsSettingsTabGeneralLanguageOptionsRo._(_root);
   @override
   String get saveWindowPlacement => 'Reține locația ferestrei după ieșire';
   @override
@@ -887,8 +934,10 @@ class _Translations$settingsTab$general$ro extends Translations$settingsTab$gene
 }
 
 // Path: settingsTab.receive
-class _Translations$settingsTab$receive$ro extends Translations$settingsTab$receive$en {
-  _Translations$settingsTab$receive$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabReceiveRo extends TranslationsSettingsTabReceiveEn {
+  _TranslationsSettingsTabReceiveRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -914,8 +963,10 @@ class _Translations$settingsTab$receive$ro extends Translations$settingsTab$rece
 }
 
 // Path: settingsTab.send
-class _Translations$settingsTab$send$ro extends Translations$settingsTab$send$en {
-  _Translations$settingsTab$send$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabSendRo extends TranslationsSettingsTabSendEn {
+  _TranslationsSettingsTabSendRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -927,8 +978,10 @@ class _Translations$settingsTab$send$ro extends Translations$settingsTab$send$en
 }
 
 // Path: settingsTab.network
-class _Translations$settingsTab$network$ro extends Translations$settingsTab$network$en {
-  _Translations$settingsTab$network$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabNetworkRo extends TranslationsSettingsTabNetworkEn {
+  _TranslationsSettingsTabNetworkRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -964,14 +1017,16 @@ class _Translations$settingsTab$network$ro extends Translations$settingsTab$netw
   String multicastGroupWarning({required Object defaultMulticast}) =>
       'Este posibil să nu fii detectat de alte dispozitive pentru că folosești o adresă multicast personalizată. (implicit: ${defaultMulticast})';
   @override
-  late final _Translations$settingsTab$network$networkOptions$ro networkOptions = _Translations$settingsTab$network$networkOptions$ro._(_root);
+  late final _TranslationsSettingsTabNetworkNetworkOptionsRo networkOptions = _TranslationsSettingsTabNetworkNetworkOptionsRo._(_root);
   @override
   String get network => 'Rețea';
 }
 
 // Path: settingsTab.other
-class _Translations$settingsTab$other$ro extends Translations$settingsTab$other$en {
-  _Translations$settingsTab$other$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabOtherRo extends TranslationsSettingsTabOtherEn {
+  _TranslationsSettingsTabOtherRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -989,8 +1044,10 @@ class _Translations$settingsTab$other$ro extends Translations$settingsTab$other$
 }
 
 // Path: troubleshootPage.firewall
-class _Translations$troubleshootPage$firewall$ro extends Translations$troubleshootPage$firewall$en {
-  _Translations$troubleshootPage$firewall$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsTroubleshootPageFirewallRo extends TranslationsTroubleshootPageFirewallEn {
+  _TranslationsTroubleshootPageFirewallRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1006,8 +1063,10 @@ class _Translations$troubleshootPage$firewall$ro extends Translations$troublesho
 }
 
 // Path: troubleshootPage.noDiscovery
-class _Translations$troubleshootPage$noDiscovery$ro extends Translations$troubleshootPage$noDiscovery$en {
-  _Translations$troubleshootPage$noDiscovery$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsTroubleshootPageNoDiscoveryRo extends TranslationsTroubleshootPageNoDiscoveryEn {
+  _TranslationsTroubleshootPageNoDiscoveryRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1020,8 +1079,10 @@ class _Translations$troubleshootPage$noDiscovery$ro extends Translations$trouble
 }
 
 // Path: troubleshootPage.noConnection
-class _Translations$troubleshootPage$noConnection$ro extends Translations$troubleshootPage$noConnection$en {
-  _Translations$troubleshootPage$noConnection$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsTroubleshootPageNoConnectionRo extends TranslationsTroubleshootPageNoConnectionEn {
+  _TranslationsTroubleshootPageNoConnectionRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1034,8 +1095,10 @@ class _Translations$troubleshootPage$noConnection$ro extends Translations$troubl
 }
 
 // Path: receiveHistoryPage.entryActions
-class _Translations$receiveHistoryPage$entryActions$ro extends Translations$receiveHistoryPage$entryActions$en {
-  _Translations$receiveHistoryPage$entryActions$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsReceiveHistoryPageEntryActionsRo extends TranslationsReceiveHistoryPageEntryActionsEn {
+  _TranslationsReceiveHistoryPageEntryActionsRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1051,14 +1114,16 @@ class _Translations$receiveHistoryPage$entryActions$ro extends Translations$rece
 }
 
 // Path: progressPage.total
-class _Translations$progressPage$total$ro extends Translations$progressPage$total$en {
-  _Translations$progressPage$total$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsProgressPageTotalRo extends TranslationsProgressPageTotalEn {
+  _TranslationsProgressPageTotalRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
   // Translations
   @override
-  late final _Translations$progressPage$total$title$ro title = _Translations$progressPage$total$title$ro._(_root);
+  late final _TranslationsProgressPageTotalTitleRo title = _TranslationsProgressPageTotalTitleRo._(_root);
   @override
   String count({required Object curr, required Object n}) => 'Fișiere: ${curr} / ${n}';
   @override
@@ -1068,8 +1133,10 @@ class _Translations$progressPage$total$ro extends Translations$progressPage$tota
 }
 
 // Path: dialogs.addFile
-class _Translations$dialogs$addFile$ro extends Translations$dialogs$addFile$en {
-  _Translations$dialogs$addFile$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsAddFileRo extends TranslationsDialogsAddFileEn {
+  _TranslationsDialogsAddFileRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1081,8 +1148,10 @@ class _Translations$dialogs$addFile$ro extends Translations$dialogs$addFile$en {
 }
 
 // Path: dialogs.openFile
-class _Translations$dialogs$openFile$ro extends Translations$dialogs$openFile$en {
-  _Translations$dialogs$openFile$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsOpenFileRo extends TranslationsDialogsOpenFileEn {
+  _TranslationsDialogsOpenFileRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1094,8 +1163,10 @@ class _Translations$dialogs$openFile$ro extends Translations$dialogs$openFile$en
 }
 
 // Path: dialogs.addressInput
-class _Translations$dialogs$addressInput$ro extends Translations$dialogs$addressInput$en {
-  _Translations$dialogs$addressInput$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsAddressInputRo extends TranslationsDialogsAddressInputEn {
+  _TranslationsDialogsAddressInputRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1111,8 +1182,10 @@ class _Translations$dialogs$addressInput$ro extends Translations$dialogs$address
 }
 
 // Path: dialogs.cancelSession
-class _Translations$dialogs$cancelSession$ro extends Translations$dialogs$cancelSession$en {
-  _Translations$dialogs$cancelSession$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsCancelSessionRo extends TranslationsDialogsCancelSessionEn {
+  _TranslationsDialogsCancelSessionRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1124,8 +1197,10 @@ class _Translations$dialogs$cancelSession$ro extends Translations$dialogs$cancel
 }
 
 // Path: dialogs.cannotOpenFile
-class _Translations$dialogs$cannotOpenFile$ro extends Translations$dialogs$cannotOpenFile$en {
-  _Translations$dialogs$cannotOpenFile$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsCannotOpenFileRo extends TranslationsDialogsCannotOpenFileEn {
+  _TranslationsDialogsCannotOpenFileRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1137,8 +1212,10 @@ class _Translations$dialogs$cannotOpenFile$ro extends Translations$dialogs$canno
 }
 
 // Path: dialogs.encryptionDisabledNotice
-class _Translations$dialogs$encryptionDisabledNotice$ro extends Translations$dialogs$encryptionDisabledNotice$en {
-  _Translations$dialogs$encryptionDisabledNotice$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsEncryptionDisabledNoticeRo extends TranslationsDialogsEncryptionDisabledNoticeEn {
+  _TranslationsDialogsEncryptionDisabledNoticeRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1150,8 +1227,10 @@ class _Translations$dialogs$encryptionDisabledNotice$ro extends Translations$dia
 }
 
 // Path: dialogs.errorDialog
-class _Translations$dialogs$errorDialog$ro extends Translations$dialogs$errorDialog$en {
-  _Translations$dialogs$errorDialog$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsErrorDialogRo extends TranslationsDialogsErrorDialogEn {
+  _TranslationsDialogsErrorDialogRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1161,8 +1240,10 @@ class _Translations$dialogs$errorDialog$ro extends Translations$dialogs$errorDia
 }
 
 // Path: dialogs.favoriteDialog
-class _Translations$dialogs$favoriteDialog$ro extends Translations$dialogs$favoriteDialog$en {
-  _Translations$dialogs$favoriteDialog$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsFavoriteDialogRo extends TranslationsDialogsFavoriteDialogEn {
+  _TranslationsDialogsFavoriteDialogRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1176,8 +1257,10 @@ class _Translations$dialogs$favoriteDialog$ro extends Translations$dialogs$favor
 }
 
 // Path: dialogs.favoriteDeleteDialog
-class _Translations$dialogs$favoriteDeleteDialog$ro extends Translations$dialogs$favoriteDeleteDialog$en {
-  _Translations$dialogs$favoriteDeleteDialog$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsFavoriteDeleteDialogRo extends TranslationsDialogsFavoriteDeleteDialogEn {
+  _TranslationsDialogsFavoriteDeleteDialogRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1189,8 +1272,10 @@ class _Translations$dialogs$favoriteDeleteDialog$ro extends Translations$dialogs
 }
 
 // Path: dialogs.favoriteEditDialog
-class _Translations$dialogs$favoriteEditDialog$ro extends Translations$dialogs$favoriteEditDialog$en {
-  _Translations$dialogs$favoriteEditDialog$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsFavoriteEditDialogRo extends TranslationsDialogsFavoriteEditDialogEn {
+  _TranslationsDialogsFavoriteEditDialogRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1210,8 +1295,10 @@ class _Translations$dialogs$favoriteEditDialog$ro extends Translations$dialogs$f
 }
 
 // Path: dialogs.fileInfo
-class _Translations$dialogs$fileInfo$ro extends Translations$dialogs$fileInfo$en {
-  _Translations$dialogs$fileInfo$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsFileInfoRo extends TranslationsDialogsFileInfoEn {
+  _TranslationsDialogsFileInfoRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1231,8 +1318,10 @@ class _Translations$dialogs$fileInfo$ro extends Translations$dialogs$fileInfo$en
 }
 
 // Path: dialogs.fileNameInput
-class _Translations$dialogs$fileNameInput$ro extends Translations$dialogs$fileNameInput$en {
-  _Translations$dialogs$fileNameInput$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsFileNameInputRo extends TranslationsDialogsFileNameInputEn {
+  _TranslationsDialogsFileNameInputRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1244,8 +1333,10 @@ class _Translations$dialogs$fileNameInput$ro extends Translations$dialogs$fileNa
 }
 
 // Path: dialogs.historyClearDialog
-class _Translations$dialogs$historyClearDialog$ro extends Translations$dialogs$historyClearDialog$en {
-  _Translations$dialogs$historyClearDialog$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsHistoryClearDialogRo extends TranslationsDialogsHistoryClearDialogEn {
+  _TranslationsDialogsHistoryClearDialogRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1257,8 +1348,10 @@ class _Translations$dialogs$historyClearDialog$ro extends Translations$dialogs$h
 }
 
 // Path: dialogs.localNetworkUnauthorized
-class _Translations$dialogs$localNetworkUnauthorized$ro extends Translations$dialogs$localNetworkUnauthorized$en {
-  _Translations$dialogs$localNetworkUnauthorized$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsLocalNetworkUnauthorizedRo extends TranslationsDialogsLocalNetworkUnauthorizedEn {
+  _TranslationsDialogsLocalNetworkUnauthorizedRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1273,8 +1366,10 @@ class _Translations$dialogs$localNetworkUnauthorized$ro extends Translations$dia
 }
 
 // Path: dialogs.messageInput
-class _Translations$dialogs$messageInput$ro extends Translations$dialogs$messageInput$en {
-  _Translations$dialogs$messageInput$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsMessageInputRo extends TranslationsDialogsMessageInputEn {
+  _TranslationsDialogsMessageInputRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1286,8 +1381,10 @@ class _Translations$dialogs$messageInput$ro extends Translations$dialogs$message
 }
 
 // Path: dialogs.noFiles
-class _Translations$dialogs$noFiles$ro extends Translations$dialogs$noFiles$en {
-  _Translations$dialogs$noFiles$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsNoFilesRo extends TranslationsDialogsNoFilesEn {
+  _TranslationsDialogsNoFilesRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1299,8 +1396,10 @@ class _Translations$dialogs$noFiles$ro extends Translations$dialogs$noFiles$en {
 }
 
 // Path: dialogs.noPermission
-class _Translations$dialogs$noPermission$ro extends Translations$dialogs$noPermission$en {
-  _Translations$dialogs$noPermission$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsNoPermissionRo extends TranslationsDialogsNoPermissionEn {
+  _TranslationsDialogsNoPermissionRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1312,8 +1411,10 @@ class _Translations$dialogs$noPermission$ro extends Translations$dialogs$noPermi
 }
 
 // Path: dialogs.notAvailableOnPlatform
-class _Translations$dialogs$notAvailableOnPlatform$ro extends Translations$dialogs$notAvailableOnPlatform$en {
-  _Translations$dialogs$notAvailableOnPlatform$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsNotAvailableOnPlatformRo extends TranslationsDialogsNotAvailableOnPlatformEn {
+  _TranslationsDialogsNotAvailableOnPlatformRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1325,8 +1426,10 @@ class _Translations$dialogs$notAvailableOnPlatform$ro extends Translations$dialo
 }
 
 // Path: dialogs.qr
-class _Translations$dialogs$qr$ro extends Translations$dialogs$qr$en {
-  _Translations$dialogs$qr$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsQrRo extends TranslationsDialogsQrEn {
+  _TranslationsDialogsQrRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1336,8 +1439,10 @@ class _Translations$dialogs$qr$ro extends Translations$dialogs$qr$en {
 }
 
 // Path: dialogs.quickActions
-class _Translations$dialogs$quickActions$ro extends Translations$dialogs$quickActions$en {
-  _Translations$dialogs$quickActions$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsQuickActionsRo extends TranslationsDialogsQuickActionsEn {
+  _TranslationsDialogsQuickActionsRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1357,8 +1462,10 @@ class _Translations$dialogs$quickActions$ro extends Translations$dialogs$quickAc
 }
 
 // Path: dialogs.quickSaveNotice
-class _Translations$dialogs$quickSaveNotice$ro extends Translations$dialogs$quickSaveNotice$en {
-  _Translations$dialogs$quickSaveNotice$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsQuickSaveNoticeRo extends TranslationsDialogsQuickSaveNoticeEn {
+  _TranslationsDialogsQuickSaveNoticeRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1370,8 +1477,10 @@ class _Translations$dialogs$quickSaveNotice$ro extends Translations$dialogs$quic
 }
 
 // Path: dialogs.quickSaveFromFavoritesNotice
-class _Translations$dialogs$quickSaveFromFavoritesNotice$ro extends Translations$dialogs$quickSaveFromFavoritesNotice$en {
-  _Translations$dialogs$quickSaveFromFavoritesNotice$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsQuickSaveFromFavoritesNoticeRo extends TranslationsDialogsQuickSaveFromFavoritesNoticeEn {
+  _TranslationsDialogsQuickSaveFromFavoritesNoticeRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1380,15 +1489,17 @@ class _Translations$dialogs$quickSaveFromFavoritesNotice$ro extends Translations
   String get title => _root.general.quickSaveFromFavorites;
   @override
   List<String> get content => [
-    'Cererile de fișiere sunt acum acceptate automat de la dispozitivele din lista dispozitivelor favorite.',
-    'Atenție! În prezent, aceasta nu este complet securizată, deoarece un hacker care are amprente pe oricare dintre dispozitivele din lista ta de favorite poate trimite fișiere fără restricții.',
-    'Oricum ar fi, această opțiune este mult mai sigură decât să permiți utilizatorilor din rețeaua locală să trimită fișiere fără restricții.',
-  ];
+        'Cererile de fișiere sunt acum acceptate automat de la dispozitivele din lista dispozitivelor favorite.',
+        'Atenție! În prezent, aceasta nu este complet securizată, deoarece un hacker care are amprente pe oricare dintre dispozitivele din lista ta de favorite poate trimite fișiere fără restricții.',
+        'Oricum ar fi, această opțiune este mult mai sigură decât să permiți utilizatorilor din rețeaua locală să trimită fișiere fără restricții.',
+      ];
 }
 
 // Path: dialogs.pin
-class _Translations$dialogs$pin$ro extends Translations$dialogs$pin$en {
-  _Translations$dialogs$pin$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsPinRo extends TranslationsDialogsPinEn {
+  _TranslationsDialogsPinRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1398,8 +1509,10 @@ class _Translations$dialogs$pin$ro extends Translations$dialogs$pin$en {
 }
 
 // Path: dialogs.sendModeHelp
-class _Translations$dialogs$sendModeHelp$ro extends Translations$dialogs$sendModeHelp$en {
-  _Translations$dialogs$sendModeHelp$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsSendModeHelpRo extends TranslationsDialogsSendModeHelpEn {
+  _TranslationsDialogsSendModeHelpRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1415,8 +1528,10 @@ class _Translations$dialogs$sendModeHelp$ro extends Translations$dialogs$sendMod
 }
 
 // Path: dialogs.zoom
-class _Translations$dialogs$zoom$ro extends Translations$dialogs$zoom$en {
-  _Translations$dialogs$zoom$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsDialogsZoomRo extends TranslationsDialogsZoomEn {
+  _TranslationsDialogsZoomRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1426,8 +1541,10 @@ class _Translations$dialogs$zoom$ro extends Translations$dialogs$zoom$en {
 }
 
 // Path: settingsTab.general.brightnessOptions
-class _Translations$settingsTab$general$brightnessOptions$ro extends Translations$settingsTab$general$brightnessOptions$en {
-  _Translations$settingsTab$general$brightnessOptions$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabGeneralBrightnessOptionsRo extends TranslationsSettingsTabGeneralBrightnessOptionsEn {
+  _TranslationsSettingsTabGeneralBrightnessOptionsRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1441,8 +1558,10 @@ class _Translations$settingsTab$general$brightnessOptions$ro extends Translation
 }
 
 // Path: settingsTab.general.colorOptions
-class _Translations$settingsTab$general$colorOptions$ro extends Translations$settingsTab$general$colorOptions$en {
-  _Translations$settingsTab$general$colorOptions$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabGeneralColorOptionsRo extends TranslationsSettingsTabGeneralColorOptionsEn {
+  _TranslationsSettingsTabGeneralColorOptionsRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1454,8 +1573,10 @@ class _Translations$settingsTab$general$colorOptions$ro extends Translations$set
 }
 
 // Path: settingsTab.general.languageOptions
-class _Translations$settingsTab$general$languageOptions$ro extends Translations$settingsTab$general$languageOptions$en {
-  _Translations$settingsTab$general$languageOptions$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabGeneralLanguageOptionsRo extends TranslationsSettingsTabGeneralLanguageOptionsEn {
+  _TranslationsSettingsTabGeneralLanguageOptionsRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1465,8 +1586,10 @@ class _Translations$settingsTab$general$languageOptions$ro extends Translations$
 }
 
 // Path: settingsTab.network.networkOptions
-class _Translations$settingsTab$network$networkOptions$ro extends Translations$settingsTab$network$networkOptions$en {
-  _Translations$settingsTab$network$networkOptions$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsSettingsTabNetworkNetworkOptionsRo extends TranslationsSettingsTabNetworkNetworkOptionsEn {
+  _TranslationsSettingsTabNetworkNetworkOptionsRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 
@@ -1478,8 +1601,10 @@ class _Translations$settingsTab$network$networkOptions$ro extends Translations$s
 }
 
 // Path: progressPage.total.title
-class _Translations$progressPage$total$title$ro extends Translations$progressPage$total$title$en {
-  _Translations$progressPage$total$title$ro._(TranslationsRo root) : this._root = root, super.internal(root);
+class _TranslationsProgressPageTotalTitleRo extends TranslationsProgressPageTotalTitleEn {
+  _TranslationsProgressPageTotalTitleRo._(TranslationsRo root)
+      : this._root = root,
+        super.internal(root);
 
   final TranslationsRo _root; // ignore: unused_field
 

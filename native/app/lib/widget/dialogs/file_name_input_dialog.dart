@@ -88,14 +88,13 @@ class _FileNameInputDialogState extends State<FileNameInputDialog> {
           ),
           const SizedBox(height: 5),
           Visibility(
-            visible: _errorMessage.isNotEmpty,
-            child: Text(
-              _errorMessage,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.warning,
-              ),
-            ),
-          ),
+              visible: _errorMessage.isNotEmpty,
+              child: Text(
+                _errorMessage,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.warning,
+                ),
+              )),
         ],
       ),
       actions: [
